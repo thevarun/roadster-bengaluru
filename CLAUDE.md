@@ -26,8 +26,14 @@ A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layou
 ## Testing
 - `window.__game` is a debug hook. `__game.sim(seconds, ctlFn)` fast-forwards the simulation at a fixed 60 Hz, independent of requestAnimationFrame (which throttles in hidden or automated tabs). Set `__game.keys.*` / `__game.pressed.*` inside `ctlFn` to drive input. It returns `{s, x, y, speed, air, clock, state, crashes, swag}`.
 - A good smoke test: start a game, teleport (`car.s = 880`), hop and hold to clear the Silk Board wall, and check `read_console_messages` for errors. For balance, run a simple avoid-and-hop bot through the full route in each drive mode and compare arrival times.
-- The window `blur` event auto-pauses the game, and automated browser tools can trigger it. Call `setPaused(false)` or click Resume before taking screenshots.
+- The window `blur` event auto-pauses the game, and automated browser tools can trigger it. Set `window.__noAutoPause = true` before taking screenshots.
 - Audio is synthesised and starts on the first user gesture. Remember the user can hear the browser pane, so don't leave a game running.
+
+## Share card and icons
+- `og.png` (1200×630) is a real frame from the game. `index.html?og` poses the car over Silk Board under the `#ogcard` layout (`setupOgCard()` in `game.js`). Regenerate it with the local server running:
+  `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --user-data-dir=/tmp/chrome-og --hide-scrollbars --use-angle=swiftshader --enable-unsafe-swiftshader --force-device-scale-factor=1 --window-size=1200,630 --virtual-time-budget=8000 --screenshot="$PWD/og.png" "http://localhost:8742/?og"`
+- `favicon.svg` is the source icon. To make `apple-touch-icon.png` (180) and `favicon-32.png`, inline it as base64 in a `data:text/html` page, screenshot it at 600×600, and crop with `sips -c N N`. Headless Chrome won't go below its minimum window size.
+- OG and Twitter meta tags in `index.html` use absolute Pages URLs.
 
 ## Git
 Conventional Commits, one line, no Co-Authored-By trailer.

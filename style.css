@@ -277,3 +277,15 @@ kbd.w { min-width: 58px; }
   .rline { margin: 22px 6px 22px; }
   #fsd { top: 190px; }
 }
+
+/* ---------- ?og share card */
+#ogcard { display: none; }
+body.og #hud, body.og #title, body.og #touch, body.og #pause { display: none !important; }
+body.og #ogcard { display: flex; flex-direction: column; justify-content: center; position: fixed; inset: 0; padding: 0 64px;
+  background: linear-gradient(90deg, rgba(0,0,0,.86) 0%, rgba(0,0,0,.6) 40%, rgba(0,0,0,0) 66%); }
+#ogcard h1 { font-size: 118px; margin-top: 6px; }
+#ogcard .truckart { align-self: flex-start; }
+#ogcard .truckart span { font-size: 30px; padding: 2px 20px 0; }
+#ogcard p { font-size: 28px; font-weight: 300; line-height: 1.4; margin: 22px 0 26px; }
+#ogcard p b { font-weight: 600; }
+.og-cta { align-self: flex-start; background: #fff; color: #000; font-weight: 600; letter-spacing: .08em; font-size: 18px; padding: 14px 24px; border-radius: 8px; }

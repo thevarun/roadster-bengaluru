@@ -4,10 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Roadster: Namma Bengaluru</title>
+<meta name="description" content="Fly a ₹2.5 crore Roadster over Silk Board to make your 9:30 standup. A silly browser game about Bengaluru traffic.">
+<meta name="theme-color" content="#14161b">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Roadster: Namma Bengaluru">
+<meta property="og:title" content="Roadster: Namma Bengaluru Edition">
+<meta property="og:description" content="Fly a ₹2.5 crore Roadster over Silk Board to make your 9:30 standup. Hop autos, respect cows, collect challans.">
+<meta property="og:url" content="https://thevarun.github.io/roadster-bengaluru/">
+<meta property="og:image" content="https://thevarun.github.io/roadster-bengaluru/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A white Roadster flying over the Silk Board traffic jam in Bengaluru">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Roadster: Namma Bengaluru Edition">
+<meta name="twitter:description" content="Fly a ₹2.5 crore Roadster over Silk Board to make your 9:30 standup.">
+<meta name="twitter:image" content="https://thevarun.github.io/roadster-bengaluru/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&family=Baloo+2:wght@600;800&family=Noto+Sans+Kannada:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
 <div id="app"></div>
@@ -69,6 +87,15 @@
     <button data-k="horn" class="sm">HORN</button><button data-k="roll" class="sm">ROLL</button>
     <button data-k="boost" class="sm">THRUST</button><button data-k="hop" class="big">HOP</button>
   </div>
+</div>
+
+<!-- share-card layout, only used by ?og for generating og.png -->
+<div id="ogcard">
+  <div class="tt-top"><span class="brand">T E S L A</span><span class="chip">FAN PARODY</span></div>
+  <h1>ROADSTER</h1>
+  <div class="truckart"><span>ನಮ್ಮ ಬೆಂಗಳೂರು Edition</span></div>
+  <p>Fly a ₹2.5 crore Roadster over <b>Silk Board</b><br>to make your <b>9:30 standup</b>.</p>
+  <div class="og-cta">▶ Play free in your browser</div>
 </div>
 
 <div id="title" class="overlay">
@@ -135,6 +162,6 @@
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
-<script type="module" src="game.js?v=10"></script>
+<script type="module" src="game.js?v=14"></script>
 </body>
 </html>
