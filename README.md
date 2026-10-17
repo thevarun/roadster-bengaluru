@@ -4,9 +4,11 @@ You just took delivery of a ₹2.5 crore flying Roadster. You still have to get 
 
 A small browser game: Tesla minimalism versus Bengaluru chaos. Hop over autos, hover across the Silk Board gridlock on cold-gas thrusters, barrel-roll over BMTC buses, and fly over cows to show respect.
 
+**▶ Play: https://thevarun.github.io/roadster-bengaluru/**
+
 ![Silk Board](_screenshots/06-silk-board-v2.jpg)
 
-## Play
+## Run locally
 
 No build step. It's static files, but ES modules need a local server:
 
