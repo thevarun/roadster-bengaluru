@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=24">
+<link rel="stylesheet" href="style.css?v=32">
 </head>
 <body>
 <div id="app"></div>
@@ -116,22 +116,27 @@
       <button id="startBtn">START COMMUTE</button>
       <div class="modes"><div class="lbl">DRIVE MODE</div><div class="seg"><button data-mode="chill">Chill</button><button data-mode="sport">Sport</button><button data-mode="plaid">Plaid</button></div></div>
     </div>
-    <button id="vehBtn" class="vehbtn"><span class="vehLabel">Roadster · Pearl White</span> <span class="chg">Change ›</span></button>
     <div class="fine">Fly over cows. Never hit one. · <button class="linkbtn soundBtn">🔊 Sound: On</button></div>
     <div class="fine legal">Fan-made parody. Not affiliated with Tesla.</div>
   </div>
+  <button id="vehBtn" class="showroomBtn"><span class="sb1">Enter the showroom <b>→</b></span><span class="sb2 vehLabel">Roadster · Ambassador White</span></button>
 </div>
 
 <div id="garage" class="hidden">
-  <div class="gpanel">
+  <div class="gvignette"></div>
+  <div class="gtop">
     <div class="brand">SHOWROOM · INDIRANAGAR</div>
-    <div class="gmodels" id="gModels"></div>
+    <h2 id="gName">Roadster</h2>
     <div id="gPrice" class="gprice"></div>
+    <div id="gDots" class="gdots"></div>
+  </div>
+  <button id="gPrev" class="garrow left" aria-label="Previous vehicle">‹</button>
+  <button id="gNext" class="garrow right" aria-label="Next vehicle">›</button>
+  <div class="gbottom">
     <p id="gDesc" class="gdesc"></p>
     <div class="gstats" id="gStats"></div>
-    <div class="lbl">PAINT <span id="gPaintName" class="gpname"></span></div>
-    <div class="gpaint" id="gPaint"></div>
-    <button id="gDone" class="primary">DO THE POOJA · TAKE DELIVERY</button>
+    <div class="gpaintrow"><div class="gpaint" id="gPaint"></div><span id="gPaintName" class="gpname"></span></div>
+    <div class="gcta"><button id="gDone" class="primary">DO THE POOJA · TAKE DELIVERY</button><button id="gHorn" class="ghost">HORN<span class="khint"> · H</span></button><button id="gBack" class="ghost">BACK</button></div>
   </div>
   <div id="pooja" class="hidden"></div>
 </div>
@@ -143,7 +148,7 @@
     <div class="ed">Traffic will wait. It always does.</div>
     <div class="tip"><span>BENGALURU PRO TIP</span><p id="pzTip"></p></div>
     <div class="pz-row"><div class="modes"><div class="lbl">DRIVE MODE</div><div class="seg"><button data-mode="chill">Chill</button><button data-mode="sport">Sport</button><button data-mode="plaid">Plaid</button></div></div><button class="ghost sm soundBtn">🔊 Sound: On</button></div>
-    <div class="btnrow"><button id="resumeBtn" class="primary">RESUME</button><button id="restartBtn" class="ghost">RESTART</button></div>
+    <div class="btnrow"><button id="resumeBtn" class="primary">RESUME</button><button id="pzShowroom" class="ghost">CHANGE CAR</button><button id="restartBtn" class="ghost">RESTART</button></div>
     <div class="fine">P / Esc to resume</div>
   </div>
 </div>
@@ -160,8 +165,8 @@
 </div>
 
 <script type="importmap">
-{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
 </script>
-<script type="module" src="game.js?v=24"></script>
+<script type="module" src="game.js?v=32"></script>
 </body>
 </html>

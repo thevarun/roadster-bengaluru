@@ -276,14 +276,17 @@ function aeroCapTex() { // Cybercab-style flat aero wheel cover
   g.fillStyle = '#2a2d33'; g.beginPath(); g.arc(64, 64, 12, 0, Math.PI * 2); g.fill();
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
-// ---------- vehicle versions (selector on the landing page)
+// flat decals get a depth offset so they never z-fight with the road (that was the flicker)
+const DECAL = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
+// ---------- vehicle versions (showroom)
+const MODEL_ORDER = ['roadster', 'auto', 'ambassador', 'shaadi'];
 const MODELS = {
   roadster: { name: 'Roadster', price: 'Ex-showroom ₹2.5 Cr*', tag: 'The one from the launch event. *Plus GST, road tax, insurance and "handling charges".', paint: 'white',
     mods: { hover: 1, hop: 1, steer: 1, horn: 1 }, stats: { Hover: 3, 'Gap squeeze': 3, Horn: 3 } },
-  rocket: { name: 'Roadster Rocket', price: '₹3.1 Cr · 3-year waiting list', tag: 'One seat only. Zero space for relatives asking for a lift. Perimeter thrusters hover longer; turns a little slower.', paint: 'black',
-    mods: { hover: 0.7, hop: 1.12, steer: 0.88, horn: 1 }, stats: { Hover: 5, 'Gap squeeze': 2, Horn: 3 } },
-  namma: { name: 'Roadster Namma Spec', price: '₹2.5 Cr + ₹40 for the meter (not working)', tag: 'Fitted at a Shivajinagar garage: auto livery, mud flaps, extra nimbu-mirchi. Squeezes through gaps like an auto, honks like one too.', livery: true,
-    mods: { hover: 1, hop: 1, steer: 1.22, horn: 1.2 }, stats: { Hover: 3, 'Gap squeeze': 5, Horn: 4 } },
+  auto: { name: 'Roadster Auto', price: '₹2.5 Cr · Minimum fare ₹30, meter "not working"', tag: 'Three wheels, a canvas hood and infinite confidence. Squeezes through gaps nothing else fits.', livery: 'Auto green & yellow',
+    mods: { hover: 1, hop: 1, steer: 1.25, horn: 1.2 }, stats: { Hover: 3, 'Gap squeeze': 5, Horn: 4 } },
+  ambassador: { name: 'Roadster Ambassador', price: '₹2.5 Cr · Red beacon "on request"', tag: 'A Roadster with Amby manners: chrome grille, round headlamps, VIP curtains and a red beacon, so traffic actually moves. Turns like it\'s 1958.', paint: 'white',
+    mods: { hover: 1.1, hop: 0.92, steer: 0.85, horn: 2.0 }, stats: { Hover: 3, 'Gap squeeze': 2, Horn: 5 } },
   shaadi: { name: 'Roadster Shaadi Edition', price: '₹2.5 Cr + ₹3 L in marigolds', tag: 'Decked out for the baraat. The horn plays the band-baaja and traffic parts for the groom. All those flowers make it hover less.', paint: 'white',
     mods: { hover: 1.3, hop: 0.95, steer: 1, horn: 1.8 }, stats: { Hover: 2, 'Gap squeeze': 3, Horn: 5 } },
 };
@@ -291,78 +294,119 @@ const PAINTS = { white: ['Ambassador White', 0xf4f4f1], black: ['Neta-ji Black',
 let carCfg = { model: 'roadster', paint: 'white' };
 try { const c = JSON.parse(localStorage.getItem('rb-car')); if (c && MODELS[c.model] && PAINTS[c.paint]) carCfg = c; } catch (e) {}
 let VEH = MODELS[carCfg.model].mods;
-const vehicleLabel = () => MODELS[carCfg.model].name + (MODELS[carCfg.model].livery ? ' · Auto livery' : ' · ' + PAINTS[carCfg.paint][0]);
+const vehicleLabel = () => MODELS[carCfg.model].name + ' · ' + (MODELS[carCfg.model].livery || PAINTS[carCfg.paint][0]);
+
+// shared bits every version carries
+function addNimbu(g, x, y, z) {
+  const nm = new THREE.Group(); nm.position.set(x, y, z); g.add(nm);
+  box(nm, 0.012, 0.22, 0.012, 0x111111, 0, -0.11, 0);
+  sph(nm, 0.07, 0xf6e13a, 0, -0.26, 0, 1, 1.15, 1);
+  for (let i = 0; i < 4; i++) { const ch = cyl(nm, 0.025, 0.2, 0x1f9d3a, 0, 0, 0); ch.scale.set(0.03, 0.12, 0.03); ch.position.y = -0.4 - i * 0.07; }
+  return nm;
+}
+function addGlow(g) {
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 5), new THREE.MeshBasicMaterial({ map: radialTex('rgba(150,220,255,1)', 'rgba(150,220,255,0)'), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 }));
+  glow.rotation.x = -Math.PI / 2; glow.position.y = 0.05; g.add(glow); g.glow = glow;
+}
+function addNozzles(g, xs, y, z) {
+  const m = new THREE.MeshStandardMaterial({ color: 0x55585e, metalness: 0.8, roughness: 0.3 });
+  g.nozzles = xs.map(x => { cyl(g, 0.07, 0.16, 0, x, y, z, 'z', m); return new THREE.Vector3(x, y, z + 0.12); });
+}
+function paintMat(cfg) {
+  return new THREE.MeshStandardMaterial({ color: PAINTS[cfg.paint][1], roughness: 0.28, metalness: cfg.paint === 'black' || cfg.paint === 'silver' ? 0.45 : 0.2 });
+}
 
 function buildRoadster(cfg = carCfg) {
   const g = new THREE.Group();
-  const model = MODELS[cfg.model];
-  const white = new THREE.MeshStandardMaterial({ color: model.livery ? 0x1f8a3a : PAINTS[cfg.paint][1], roughness: 0.28, metalness: cfg.paint === 'black' || cfg.paint === 'silver' ? 0.45 : 0.2 });
+  const auto = cfg.model === 'auto', amb = cfg.model === 'ambassador';
+  const body = auto ? new THREE.MeshStandardMaterial({ color: 0x1f8a3a, roughness: 0.35 }) : paintMat(cfg);
+  const yel = new THREE.MeshStandardMaterial({ color: 0xf5c518, roughness: 0.4 });
   const glass = new THREE.MeshStandardMaterial({ color: 0x0a0c11, roughness: 0.08, metalness: 0.7 });
   const black = new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.55 });
+  const chrome = new THREE.MeshStandardMaterial({ color: 0xe9edf1, metalness: 0.25, roughness: 0.18 }); // reads as chrome without an env map
   const W = 1.98;
   // body: SR-71 / Esprit wedge — knife nose, hood rising in one line, long flat deck, cut-off tail
   const s = new THREE.Shape();
   s.moveTo(-2.42, 0.3); s.lineTo(-2.46, 0.4); s.lineTo(-2.25, 0.48); s.lineTo(-0.85, 0.79); s.lineTo(1.0, 0.92);
   s.lineTo(2.0, 0.97); s.lineTo(2.44, 0.93); s.lineTo(2.47, 0.56); s.lineTo(2.25, 0.26); s.lineTo(-2.1, 0.24); s.closePath();
-  const body = new THREE.Mesh(wedge(s, W, 0.45, 0.5, 0.16, 0.08), white); body.rotation.y = -Math.PI / 2; g.add(body);
-  // wrap-around canopy
+  const bodyMesh = new THREE.Mesh(wedge(s, W, 0.45, 0.5, 0.16, 0.08), body); bodyMesh.rotation.y = -Math.PI / 2; g.add(bodyMesh);
+  if (auto) {
+    // yellow nose like an auto's front, black canvas hood instead of the glass canopy, grab rails, fare meter
+    const n = new THREE.Shape();
+    n.moveTo(-2.42, 0.3); n.lineTo(-2.46, 0.4); n.lineTo(-2.25, 0.48); n.lineTo(-0.85, 0.79); n.lineTo(-0.85, 0.24); n.lineTo(-2.1, 0.24); n.closePath();
+    const nose = new THREE.Mesh(wedge(n, W + 0.02, 0.45, 0.5, 0.16, 0.085), new THREE.MeshStandardMaterial({ color: 0xf5c518, roughness: 0.4, ...DECAL }));
+    nose.rotation.y = -Math.PI / 2; g.add(nose);
+    for (const sx of [-1, 1]) {
+      box(g, 0.04, 0.07, 2.7, 0, sx * 0.78, 0.8, 0.55, yel);                         // yellow band along the canvas hood
+      cyl(g, 0.022, 1.6, 0, sx * 0.86, 0.9, 0.5, 'z', chrome);                      // grab rails
+    }
+    box(g, 0.2, 0.24, 0.14, 0x111111, -1.0, 0.98, -0.55);                              // fare meter
+    box(g, 0.13, 0.06, 0.01, 0, -1.0, 1.02, -0.62, new THREE.MeshBasicMaterial({ color: 0xff3030 }));
+  }
+  // canopy: glass on the Roadster, black canvas on the Auto — same shape either way
   const c = new THREE.Shape();
   c.moveTo(-0.95, 0.74); c.lineTo(-0.1, 1.2); c.lineTo(0.75, 1.24); c.lineTo(1.6, 1.07); c.lineTo(2.05, 0.95); c.lineTo(2.0, 0.86); c.lineTo(-0.95, 0.68); c.closePath();
-  const canopy = new THREE.Mesh(wedge(c, 1.5, 0.8, 0.45, 0.3, 0.05), glass); canopy.rotation.y = -Math.PI / 2; g.add(canopy);
+  const canopy = new THREE.Mesh(wedge(c, 1.5, 0.8, 0.45, 0.3, 0.05), auto ? new THREE.MeshStandardMaterial({ color: 0x141518, roughness: 0.95 }) : glass);
+  canopy.rotation.y = -Math.PI / 2; g.add(canopy);
   // black lower chines, wheel arches, side intakes
   for (const sx of [-1, 1]) {
     box(g, 0.06, 0.13, 3.9, 0, sx * 1.08, 0.33, 0.05, black);
     box(g, 0.03, 0.2, 0.75, 0, sx * 1.06, 0.62, 0.72, black);
-    for (const wz of [-1.45, 1.5]) {
+    for (const wz of auto ? [1.5] : [-1.45, 1.5]) {
       const arch = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 6, 18, Math.PI), black);
       arch.rotation.y = Math.PI / 2; arch.position.set(sx * 1.09, 0.42, wz); g.add(arch);
     }
   }
-  // wheels with Cybercab-style aero covers
+  // wheels with Cybercab-style aero covers (the auto gets a single front wheel, obviously)
   const tire = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
-  const cap = new THREE.MeshStandardMaterial({ map: aeroCapTex(), roughness: 0.35, metalness: 0.4 });
+  const cap = amb ? chrome : new THREE.MeshStandardMaterial({ map: aeroCapTex(), roughness: 0.35, metalness: 0.4 });
   g.wheels = [];
-  for (const [x, z] of [[-1, -1.45], [1, -1.45], [-1, 1.5], [1, 1.5]]) {
-    const wg = new THREE.Group(); wg.position.set(x * 1.04, 0.42, z); g.add(wg);
-    cyl(wg, 0.42, 0.36, 0, 0, 0, 0, 'x', tire);
-    const disc = new THREE.Mesh(new THREE.CircleGeometry(0.34, 20), cap); disc.position.x = x * 0.185; disc.rotation.y = x * Math.PI / 2; wg.add(disc);
+  const wheelSpots = auto ? [[0, -1.75, 0.3], [-1, 1.5, 0.42], [1, 1.5, 0.42]] : [[-1, -1.45, 0.42], [1, -1.45, 0.42], [-1, 1.5, 0.42], [1, 1.5, 0.42]];
+  for (const [x, z, r] of wheelSpots) {
+    const wg = new THREE.Group(); wg.position.set(x * 1.04, r, z); g.add(wg);
+    cyl(wg, r, 0.3, 0, 0, 0, 0, 'x', tire);
+    for (const side of x === 0 ? [-1, 1] : [x]) { const disc = new THREE.Mesh(new THREE.CircleGeometry(r * 0.8, 20), cap); disc.position.x = side * 0.155; disc.rotation.y = side * Math.PI / 2; wg.add(disc); }
     g.wheels.push(wg);
   }
+  if (auto) { box(g, 0.08, 0.5, 0.08, 0x2a2a2a, 0, 0.5, -1.75); }                       // front fork
   // nose: splitter + light bar
   box(g, 1.9, 0.05, 0.4, 0, 0, 0.22, -2.3, black);
-  box(g, 1.7, 0.04, 0.04, 0, 0, 0.44, -2.56, new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  if (!amb) box(g, 1.7, 0.04, 0.04, 0, 0, 0.44, -2.56, new THREE.MeshBasicMaterial({ color: 0xffffff }));
   // tail: black fascia, full-width light bar, diffuser
   box(g, 1.92, 0.3, 0.04, 0, 0, 0.67, 2.56, black);
   box(g, 1.96, 0.06, 0.05, 0, 0, 0.87, 2.56, new THREE.MeshBasicMaterial({ color: 0xff2a2a }));
   box(g, 1.6, 0.14, 0.18, 0, 0, 0.3, 2.36, black);
   // active rear wing with endplates
-  box(g, 2.0, 0.05, 0.42, 0, 0, 1.32, 2.14, model.livery ? new THREE.MeshStandardMaterial({ color: 0xf5c518, roughness: 0.4 }) : white);
+  box(g, 2.0, 0.05, 0.42, 0, 0, 1.32, 2.14, auto ? yel : body);
   for (const sx of [-1, 1]) { box(g, 0.04, 0.22, 0.46, 0, sx * 1.0, 1.26, 2.14, black); box(g, 0.05, 0.32, 0.1, 0, sx * 0.55, 1.12, 2.16, black); }
-  // 4 SpaceX cold-gas thrusters in the tail fascia
-  g.nozzles = [];
-  for (const x of [-0.72, -0.45, 0.45, 0.72]) {
-    cyl(g, 0.07, 0.16, 0, x, 0.66, 2.6, 'z', new THREE.MeshStandardMaterial({ color: 0x55585e, metalness: 0.8, roughness: 0.3 }));
-    g.nozzles.push(new THREE.Vector3(x, 0.66, 2.72));
-  }
-  // underglow (suction fan) visible when hovering
-  const glow = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 5), new THREE.MeshBasicMaterial({ map: radialTex('rgba(150,220,255,1)', 'rgba(150,220,255,0)'), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 }));
-  glow.rotation.x = -Math.PI / 2; glow.position.y = 0.05; g.add(glow); g.glow = glow;
+  addNozzles(g, [-0.72, -0.45, 0.45, 0.72], 0.66, 2.6);
+  addGlow(g);
   // marigold garland on the hood (it was just blessed at the temple)
   for (let i = 0; i <= 10; i++) {
     const t = i / 10, x = (t - 0.5) * 1.3, z = -1.3 - Math.cos((t - 0.5) * Math.PI) * 0.4;
     sph(g, 0.065, i % 2 ? 0xff8c00 : 0xffb300, x, 0.5 + (z + 2.25) / 1.4 * 0.31 + 0.06, z);
   }
-  // nimbu-mirchi hanging from the nose
-  const nm = new THREE.Group(); nm.position.set(0.35, 0.36, -2.56); g.add(nm); g.nimbu = nm;
-  box(nm, 0.012, 0.22, 0.012, 0x111111, 0, -0.11, 0);
-  sph(nm, 0.07, 0xf6e13a, 0, -0.26, 0, 1, 1.15, 1);
-  for (let i = 0; i < 4; i++) { const ch = cyl(nm, 0.025, 0.2, 0x1f9d3a, 0, -0.43 - i * 0.12, 0); ch.scale.set(0.03, 0.12, 0.03); ch.position.y = -0.4 - i * 0.07; }
-  if (cfg.model === 'rocket') { // perimeter thruster pods + a red pinstripe
-    const pod = new THREE.MeshStandardMaterial({ color: 0x55585e, metalness: 0.8, roughness: 0.3 });
+  g.nimbu = addNimbu(g, 0.35, 0.36, -2.56);
+  if (auto) { // yellow beltline, mud flaps with reflectors, a second nimbu-mirchi out back
     for (const sx of [-1, 1]) {
-      for (const z of [-1.95, -0.2, 0.75]) cyl(g, 0.08, 0.14, 0, sx * 1.1, 0.5, z, 'x', pod);
-      box(g, 0.02, 0.035, 3.6, 0, sx * 1.075, 0.56, 0.1, new THREE.MeshBasicMaterial({ color: 0xe82127 }));
+      box(g, 0.03, 0.12, 3.9, 0, sx * 1.06, 0.66, 0.05, yel);
+      box(g, 0.3, 0.32, 0.03, 0x111111, sx * 1.0, 0.2, 2.1); box(g, 0.1, 0.05, 0.035, 0xe82127, sx * 1.0, 0.3, 2.103);
     }
+    addNimbu(g, -0.6, 0.6, 2.6);
+  }
+  if (amb) { // Ambassador cues on a Roadster: chrome grille, round headlamps, bumpers, side strip, VIP curtains, red beacon
+    box(g, 1.0, 0.15, 0.04, 0, 0, 0.39, -2.55, chrome);
+    for (let i = 0; i < 7; i++) box(g, 0.02, 0.12, 0.05, 0x2a2d33, -0.42 + i * 0.14, 0.39, -2.56);
+    for (const sx of [-1, 1]) {
+      cyl(g, 0.11, 0.05, 0, sx * 0.72, 0.42, -2.52, 'z', new THREE.MeshBasicMaterial({ color: 0xfffbe6 }));
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.02, 6, 16), chrome); ring.position.set(sx * 0.72, 0.42, -2.55); g.add(ring);
+      box(g, 0.02, 0.035, 3.8, 0, sx * 1.08, 0.58, 0.05, chrome);
+      box(g, 0.02, 0.16, 0.62, 0xf4efe6, sx * 0.7, 1.0, 1.2);
+    }
+    box(g, 1.98, 0.07, 0.1, 0, 0, 0.27, -2.55, chrome); box(g, 1.98, 0.07, 0.1, 0, 0, 0.33, 2.62, chrome);
+    cyl(g, 0.12, 0.05, 0x111111, 0, 1.28, 0.3);
+    g.beacon = sph(g, 0.15, 0xff2020, 0, 1.37, 0.3, 1, 0.8, 1);
+    g.beacon.material = new THREE.MeshBasicMaterial({ color: 0xff2020 });
   }
   if (cfg.model === 'shaadi') { // baraat car: marigold strands over the canopy and along the sides, flowers on the nose, ribbon bow
     const strand = (pts, n) => { for (let i = 0; i <= n; i++) { const t = i / n, p = pts(t); sph(g, 0.075, i % 3 === 0 ? 0xff5a1f : i % 2 ? 0xff8c00 : 0xffb300, p[0], p[1], p[2]); } };
@@ -372,28 +416,20 @@ function buildRoadster(cfg = carCfg) {
     for (const sx of [-1, 1]) { const r = box(g, 0.5, 0.04, 0.22, 0xe8336f, sx * 0.22, 0.72, -1.05); r.rotation.y = sx * 0.6; }
     sph(g, 0.09, 0xe8336f, 0, 0.73, -1.05);
   }
-  if (model.livery) { // Namma Spec: auto-rickshaw yellow beltline, mud flaps, rear nimbu-mirchi
-    const yel = new THREE.MeshStandardMaterial({ color: 0xf5c518, roughness: 0.4 });
-    for (const sx of [-1, 1]) {
-      box(g, 0.03, 0.12, 3.9, 0, sx * 1.06, 0.66, 0.05, yel);
-      for (const wz of [-0.85, 2.1]) { box(g, 0.3, 0.32, 0.03, 0x111111, sx * 1.0, 0.2, wz); box(g, 0.1, 0.05, 0.035, 0xe82127, sx * 1.0, 0.3, wz + 0.003); }
-    }
-    const nm2 = nm.clone(); nm2.position.set(-0.6, 0.6, 2.6); g.add(nm2);
-  }
   return g;
 }
+
 let carMesh = buildRoadster();
 function applyVehicle(cfg) {
   carCfg = cfg; VEH = MODELS[cfg.model].mods;
   try { localStorage.setItem('rb-car', JSON.stringify(cfg)); } catch (e) {}
   const old = carMesh, nm = buildRoadster(cfg);
   nm.position.copy(old.position); nm.rotation.copy(old.rotation);
-  scene.remove(old); disposeObj(old); scene.add(nm); carMesh = nm;
+  const room = old.parent || scene; room.remove(old); disposeObj(old); room.add(nm); carMesh = nm;
   for (const el of document.querySelectorAll('.vehLabel')) el.textContent = vehicleLabel();
 }
+function animateCarExtras(t) { if (carMesh.beacon) carMesh.beacon.material.color.setHex(Math.sin(t * 12) > 0 ? 0xff2424 : 0x4a0808); }
 scene.add(carMesh);
-// flat decals get a depth offset so they never z-fight with the road (that was the flicker)
-const DECAL = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
 const carShadow = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 6), new THREE.MeshBasicMaterial({ map: SHADOW_TEX, transparent: true, depthWrite: false, ...DECAL }));
 carShadow.rotation.x = -Math.PI / 2; scene.add(carShadow);
 // tight dark contact shadow that only shows when the wheels are on the ground
@@ -960,7 +996,8 @@ const AU = {
   },
   playerHorn(model = 'roadster') { // the Roadster: crisp, expensive, dual-tone. Also ignored.
     if (!this.ok()) return;
-    if (model === 'namma') return this.honk('auto', 0, 0);
+    if (model === 'auto') return this.honk('auto', 0, 0);
+    if (model === 'ambassador') return this.hooter();
     if (model === 'shaadi') return this.bandBaaja();
     const ctx = this.ctx, t = this.now(), inp = this.spatial(0, 0, 0.08);
     const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = 0.8; bp.connect(inp);
@@ -1023,6 +1060,13 @@ const AU = {
       this.osc('sawtooth', f, t + at, d + 0.05, g); this.osc('square', f * 1.004, t + at, d + 0.05, g); return at + d;
     }, 0);
     this.noise(t, 0.1, 'highpass', 6000, 0.7, 0.12, inp); this.noise(t + 0.48, 0.1, 'highpass', 6000, 0.7, 0.12, inp); // cymbal ticks
+  },
+  hooter() { // VIP siren whoop for the Ambassador's red beacon
+    if (!this.ok()) return;
+    const ctx = this.ctx, t = this.now(), inp = this.spatial(0, 0, 0.15);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 0.9; bp.connect(inp);
+    const g = ctx.createGain(); this.env(g, t, 0.02, 0.3, 0.62, 0.08); g.connect(bp);
+    const o = this.osc('sawtooth', 620, t, 0.8, g); o.frequency.linearRampToValueAtTime(1050, t + 0.32); o.frequency.linearRampToValueAtTime(620, t + 0.66);
   },
   bell() { // temple bell for the delivery pooja
     if (!this.ok()) return;
@@ -1559,6 +1603,7 @@ function syncVisuals(dt) {
   carMesh.rotation.set(car.pitch, -car.vx * 0.012, car.tilt + (car.rolling ? car.rollDir * -car.roll * Math.PI * 2 : 0));
   for (const w of carMesh.wheels) w.children[0].rotation.x += car.speed * dt / 0.37;
   carMesh.nimbu.rotation.z = Math.sin(game.t * 7) * 0.15 + car.vx * 0.03;
+  animateCarExtras(game.t);
   carMesh.nimbu.rotation.x = -car.speed * 0.008;
   const hover = car.thrust * (car.onGround ? 0 : 1);
   carMesh.glow.material.opacity = hover * 0.9; carMesh.glow.position.y = -car.y + 0.05 + 0.01; carMesh.glow.scale.setScalar(1 + car.y * 0.1);
@@ -1632,48 +1677,129 @@ function setPaused(p) {
   for (const k in keys) keys[k] = false;
   AU.setPaused(p);
 }
-// ---------- vehicle selector
-let garageOpen = false;
+// ---------- showroom: car on a turntable, ‹ › to swap, opens from the title screen or the pause menu
+let garageOpen = false, garageFrom = 'title', garageCfgAtOpen = '';
+const showroom = { x: 0, z: 0, rot: 0.7, pop: 1, t: 0 };
+// its own room: dark glossy studio, curved back wall with light strips, a marigold-and-mango-leaf toran for the inauguration
+const showroomScene = new THREE.Scene();
+showroomScene.background = new THREE.Color(0x0e0f12); showroomScene.fog = new THREE.Fog(0x0e0f12, 14, 30);
+showroomScene.add(new THREE.HemisphereLight(0xe8edf5, 0x1c1d22, 1.25));
+{ const k = new THREE.DirectionalLight(0xffffff, 1.3); k.position.set(4, 10, 9); showroomScene.add(k); const r = new THREE.DirectionalLight(0xffd9a0, 0.6); r.position.set(-6, 4, -6); showroomScene.add(r); }
+{
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(16, 48), new THREE.MeshStandardMaterial({ color: 0x17181c, roughness: 0.55, metalness: 0.2 }));
+  floor.rotation.x = -Math.PI / 2; showroomScene.add(floor);
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(15, 15), new THREE.MeshBasicMaterial({ map: radialTex('rgba(255,250,240,0.32)', 'rgba(255,250,240,0)'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, ...DECAL }));
+  pool.rotation.x = -Math.PI / 2; pool.position.y = 0.01; showroomScene.add(pool);
+  const wall = new THREE.Mesh(new THREE.CylinderGeometry(15, 15, 11, 48, 1, true), new THREE.MeshStandardMaterial({ color: 0x1b1c21, roughness: 0.9, side: THREE.BackSide }));
+  wall.position.y = 5.5; showroomScene.add(wall);
+  const strip = new THREE.MeshBasicMaterial({ color: 0xf2f4f8 });
+  for (let i = -5; i <= 5; i++) { const a = Math.PI + i * 0.22; const m = box(showroomScene, 0.12, 5, 0.12, 0, Math.sin(a) * 14.8, 2.5, Math.cos(a) * 14.8, strip); m.rotation.y = a; }
+  // toran: marigold strands sagging between hooks, mango leaves hanging below
+  const leaf = mat(0x2f7d32);
+  for (let k = -3; k < 3; k++) {
+    for (let i = 0; i <= 12; i++) {
+      const t = i / 12, a = Math.PI + (k + t) * 0.26, y = 5.9 - Math.sin(t * Math.PI) * 0.8;
+      sph(showroomScene, 0.16, i % 2 ? 0xff8c00 : 0xffb300, Math.sin(a) * 14.4, y, Math.cos(a) * 14.4);
+      if (i % 3 === 1) { const l = new THREE.Mesh(CYL, leaf); l.scale.set(0.09, 0.6, 0.03); l.position.set(Math.sin(a) * 14.35, y - 0.45, Math.cos(a) * 14.35); l.rotation.y = a; showroomScene.add(l); }
+    }
+  }
+}
+const showroomShadow = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 5.6), new THREE.MeshBasicMaterial({ map: radialTex('rgba(0,0,0,0.85)', 'rgba(0,0,0,0)'), transparent: true, depthWrite: false, ...DECAL }));
+showroomShadow.rotation.x = -Math.PI / 2; showroomScene.add(showroomShadow);
+const turntable = new THREE.Group(); showroomScene.add(turntable);
+{
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 2.9, 0.08, 48), new THREE.MeshStandardMaterial({ color: 0x1c1d22, roughness: 0.3, metalness: 0.4 }));
+  disc.position.y = 0.04; turntable.add(disc);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(2.9, 0.03, 6, 64), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  ring.rotation.x = Math.PI / 2; ring.position.y = 0.085; turntable.add(ring);
+}
 function renderGarage() {
-  const m = MODELS[carCfg.model];
-  $('gModels').innerHTML = Object.entries(MODELS).map(([k, v]) => `<button class="gmodel${k === carCfg.model ? ' on' : ''}" data-model="${k}">${v.name}</button>`).join('');
+  const m = MODELS[carCfg.model], i = MODEL_ORDER.indexOf(carCfg.model);
+  $('gName').textContent = m.name;
   $('gPrice').textContent = m.price;
+  $('gDots').innerHTML = MODEL_ORDER.map((k, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join('');
   $('gDesc').textContent = m.tag;
-  $('gStats').innerHTML = Object.entries(m.stats).map(([k, v]) => `<span>${k}</span><div class="gbar">${[1, 2, 3, 4, 5].map(i => `<i class="${i <= v ? 'on' : ''}"></i>`).join('')}</div>`).join('');
+  $('gStats').innerHTML = Object.entries(m.stats).map(([k, v]) => `<div><span>${k}</span><div class="gbar">${[1, 2, 3, 4, 5].map(n => `<i class="${n <= v ? 'on' : ''}"></i>`).join('')}</div></div>`).join('');
   $('gPaint').innerHTML = Object.entries(PAINTS).map(([k, [n, c]]) => `<button data-paint="${k}" title="${n}" aria-label="${n}" class="${k === carCfg.paint ? 'on' : ''}" style="background:#${c.toString(16).padStart(6, '0')}"></button>`).join('');
   $('gPaint').classList.toggle('locked', !!m.livery);
-  $('gPaintName').textContent = m.livery ? 'Auto livery (fixed by the auto stand)' : PAINTS[carCfg.paint][0];
-  $('gModels').querySelectorAll('button').forEach(b => b.onclick = () => { const k = b.dataset.model; applyVehicle({ model: k, paint: MODELS[k].paint || carCfg.paint }); renderGarage(); });
-  $('gPaint').querySelectorAll('button').forEach(b => b.onclick = () => { applyVehicle({ model: carCfg.model, paint: b.dataset.paint }); renderGarage(); });
+  $('gPaintName').textContent = m.livery || PAINTS[carCfg.paint][0];
+  $('gPaint').querySelectorAll('button').forEach(b => b.onclick = () => { b.blur(); applyVehicle({ model: carCfg.model, paint: b.dataset.paint }); showroom.pop = 0.6; renderGarage(); });
 }
-let garageCfgAtOpen = '';
-function setGarage(open) {
+function testHorn() { unlockAudio(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume(); AU.playerHorn(carCfg.model); }
+function cycleModel(d) {
+  const i = (MODEL_ORDER.indexOf(carCfg.model) + d + MODEL_ORDER.length) % MODEL_ORDER.length, k = MODEL_ORDER[i];
+  applyVehicle({ model: k, paint: MODELS[k].paint || carCfg.paint }); showroom.pop = 0; renderGarage();
+}
+function setGarage(open, from) {
+  if (open) garageFrom = from || (state === 'playing' ? 'pause' : 'title');
   garageOpen = open;
-  $('garage').classList.toggle('hidden', !open); $('title').classList.toggle('hidden', open);
-  $('garage').querySelector('.gpanel').classList.remove('away');
-  if (open) { garageCfgAtOpen = JSON.stringify(carCfg); renderGarage(); } else camera.clearViewOffset();
+  (open ? showroomScene : scene).add(carMesh);   // the car moves into the showroom room and back
+  $('garage').classList.toggle('hidden', !open); $('garage').classList.remove('away');
+  if (garageFrom === 'title') $('title').classList.toggle('hidden', open);
+  else { $('pause').classList.toggle('hidden', open); $('hud').classList.toggle('hidden', open); if (isTouch) $('touch').classList.toggle('hidden', open); }
+  if (open) {
+    garageCfgAtOpen = JSON.stringify(carCfg);
+    showroom.rot = 0.7; showroom.pop = 1;
+    renderGarage();
+  } else {
+    camera.clearViewOffset(); carMesh.scale.setScalar(1);
+    camera.fov = camera.aspect < 1 ? 84 : 62; camera.updateProjectionMatrix();
+    if (garageFrom === 'pause') { syncVisuals(0.016); fillPause(); }
+  }
+}
+function showroomFrame(dt) {
+  if (pooja) { if (pressed.pause || pressed.enter) finishPooja(); else updatePooja(dt); }
+  else if (pressed.pause) setGarage(false);
+  else if (pressed.enter) takeDelivery();
+  else if (pressed.left) cycleModel(-1);
+  else if (pressed.right) cycleModel(1);
+  else if (pressed.horn) testHorn();
+  if (!garageOpen) return;
+  showroom.t += dt; game.t += dt;
+  if (!pooja) showroom.rot += dt * 0.35;
+  showroom.pop = Math.min(1, showroom.pop + dt * 3.5);
+  const pop = 1 - Math.pow(1 - showroom.pop, 3), base = 0.09;
+  carMesh.position.set(showroom.x, base, showroom.z + poojaZ);
+  carMesh.rotation.set(0, pooja ? 0 : showroom.rot, 0);
+  carMesh.scale.setScalar(0.82 + 0.18 * pop);
+  turntable.position.set(showroom.x, 0, showroom.z); turntable.rotation.y = showroom.rot;
+  turntable.visible = !pooja;
+  showroomShadow.position.set(showroom.x, base + 0.01, showroom.z + poojaZ); carMesh.glow.material.opacity = 0;
+  const portrait = camera.aspect < 1;
+  if (pooja) {
+    camera.clearViewOffset();
+    camera.position.set(showroom.x + 5.6 * (portrait ? 1.5 : 1), 1.5, showroom.z + poojaZ - 0.6); camera.lookAt(showroom.x, 0.35, showroom.z + poojaZ - 0.6);
+  } else {
+    const d = portrait ? 1.35 : 1;
+    camera.position.set(showroom.x + 3.9 * d, 2.4 * d, showroom.z + 7.2 * d); camera.lookAt(showroom.x, 0.5, showroom.z);
+    const w = innerWidth, h = innerHeight;
+    camera.setViewOffset(w, h, 0, h * (portrait ? 0.1 : 0.07), w, h);   // nudge the car up, clear of the bottom panel
+  }
+  if (camera.fov !== (portrait ? 70 : 50)) { camera.fov = portrait ? 70 : 50; camera.updateProjectionMatrix(); }
+  carMesh.nimbu.rotation.z = Math.sin(game.t * 3) * 0.2;
+  animateCarExtras(showroom.t);
+  AU.setEngine(0, 0);
 }
 // ---------- delivery pooja: break a coconut, roll over a lemon under each wheel, ring the bell
 let pooja = null, poojaZ = 0;
 function takeDelivery() {
   if (JSON.stringify(carCfg) === garageCfgAtOpen) return setGarage(false); // nothing new, no ceremony
   unlockAudio(); AU.coconut();
-  $('garage').querySelector('.gpanel').classList.add('away'); camera.clearViewOffset();
-  const lg = new THREE.Group(); scene.add(lg);
-  const lemons = [[-1.04, -1.45], [1.04, -1.45], [-1.04, 1.5], [1.04, 1.5]].map(([x, z]) => sph(lg, 0.14, 0xf6e13a, car.x + x, 0.13, z - 1.0, 1, 0.85, 1));
+  $('garage').classList.add('away'); camera.clearViewOffset(); carMesh.scale.setScalar(1);
+  const lg = new THREE.Group(); showroomScene.add(lg);
+  const lemons = carMesh.wheels.map(w => sph(lg, 0.14, 0xf6e13a, showroom.x + w.position.x, 0.13, showroom.z + w.position.z - 1.0, 1, 0.85, 1));
   pooja = { t: 0, lg, lemons, step: 0 };
   $('pooja').innerHTML = '<span>Coconut broken ✓</span>'; $('pooja').classList.remove('hidden');
 }
 function updatePooja(dt) {
-  const p = pooja; p.t += dt; updateParticles(dt);
+  const p = pooja; p.t += dt;
   const k = clamp((p.t - 0.4) / 1.0, 0, 1);
   poojaZ = -(k * k * (3 - 2 * k)) * 1.3;                                       // roll forward over the lemons
   for (const w of carMesh.wheels) w.children[0].rotation.x -= (k > 0 && k < 1 ? 3.5 : 0) * dt;
   p.lemons.forEach((l, i) => {
-    const wheelZ = (i < 2 ? -1.45 : 1.5) + poojaZ;
+    const wheelZ = showroom.z + carMesh.wheels[i].position.z + poojaZ;
     if (l.scale.y > 0.06 && wheelZ <= l.position.z + 0.05) {
       l.scale.set(0.2, 0.035, 0.2); l.position.y = 0.03;
-      for (let j = 0; j < 5; j++) puff(l.position.clone().add(new THREE.Vector3(0, 0.15, 0)), new THREE.Vector3(rand(-1.5, 1.5), rand(0.5, 2), rand(-1.5, 1.5)), 0.5, 0.2, 0.6, 0xf6e13a, 0.9);
     }
   });
   if (p.step === 0 && p.t > 1.2) { p.step = 1; $('pooja').innerHTML += '<span>Lemons crushed ✓</span>'; AU.thud(); }
@@ -1682,7 +1808,7 @@ function updatePooja(dt) {
 }
 function finishPooja() {
   if (!pooja) return;
-  scene.remove(pooja.lg); disposeObj(pooja.lg); pooja = null; poojaZ = 0;
+  showroomScene.remove(pooja.lg); disposeObj(pooja.lg); pooja = null; poojaZ = 0;
   $('pooja').classList.add('hidden'); setGarage(false);
 }
 function setMode(m) {
@@ -1737,7 +1863,12 @@ function endGame(arrived) {
 $('startBtn').addEventListener('click', startGame);
 $('againBtn').addEventListener('click', startGame);
 $('resumeBtn').addEventListener('click', () => setPaused(false));
-$('vehBtn').addEventListener('click', () => setGarage(true));
+$('vehBtn').addEventListener('click', () => setGarage(true, 'title'));
+$('pzShowroom').addEventListener('click', () => setGarage(true, 'pause'));
+$('gPrev').addEventListener('click', () => cycleModel(-1));
+$('gNext').addEventListener('click', () => cycleModel(1));
+$('gBack').addEventListener('click', () => setGarage(false));
+$('gHorn').addEventListener('click', testHorn);
 $('gDone').addEventListener('click', takeDelivery);
 $('restartBtn').addEventListener('click', startGame);
 $('pauseBtn').addEventListener('click', () => setPaused(true));
@@ -1759,24 +1890,21 @@ function frame(now) {
   if (state === 'og') { renderer.render(viewScene, camera); return; }
   let dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (pressed.mute) { AU.setMuted(!AU.muted); syncAudioButtons(); hint(AU.muted ? '🔇 Muted · M to unmute' : '🔊 Sound on', 1.4); }
+  if (garageOpen) { showroomFrame(dt); for (const k in pressed) pressed[k] = false; renderer.render(garageOpen ? showroomScene : scene, camera); return; }
   if (state === 'title' || state === 'over') {
-    if (garageOpen) { if (pooja) { if (pressed.pause || pressed.enter) finishPooja(); else updatePooja(dt); } else if (pressed.pause) setGarage(false); else if (pressed.enter) takeDelivery(); }
-    else if ((pressed.enter || (pressed.hop && state === 'title')) && !(state === 'over' && $('over').classList.contains('hidden'))) startGame();
+    if ((pressed.enter || (pressed.hop && state === 'title')) && !(state === 'over' && $('over').classList.contains('hidden'))) startGame();
     // idle showroom orbit on title
     if (state === 'title') {
       game.t += dt;
       const a = game.t * 0.25;
-      carMesh.position.set(car.x, 0, poojaZ); carMesh.rotation.set(0, 0, 0);
-      carShadow.position.set(car.x, 0.02, poojaZ); carContact.position.set(car.x, 0.025, poojaZ); carContact.material.opacity = 1;
+      carMesh.position.set(car.x, 0, 0); carMesh.rotation.set(0, 0, 0);
+      carShadow.position.set(car.x, 0.02, 0); carContact.position.set(car.x, 0.025, 0); carContact.material.opacity = 1;
+      animateCarExtras(game.t);
+      if (camera.fov !== 62) { camera.fov = 62; camera.updateProjectionMatrix(); }
       for (const m of [road, ...paths, ...curbs, earth]) m.position.z = -100;
-      const portrait = camera.aspect < 1, r = (garageOpen ? 6.4 : 7.5) * (portrait ? 1.6 : 1);
-      camera.position.set(car.x + Math.sin(a) * r, (garageOpen ? 2.0 : 2.4) * (portrait ? 1.4 : 1), Math.cos(a) * r);
+      const portrait = camera.aspect < 1, r = 7.5 * (portrait ? 1.6 : 1);
+      camera.position.set(car.x + Math.sin(a) * r, 2.4 * (portrait ? 1.4 : 1), Math.cos(a) * r);
       camera.lookAt(car.x, 0.6, 0);
-      if (pooja) { camera.position.set(car.x + 5.6, 1.5, poojaZ - 0.6); camera.lookAt(car.x, 0.35, poojaZ - 0.6); } // side-on so you see the lemons go
-      else if (garageOpen) { // keep the car clear of the panel: left of it on desktop, above it on phones
-        const w = innerWidth, h = innerHeight;
-        if (w > 760) camera.setViewOffset(w, h, 190, 0, w, h); else camera.setViewOffset(w, h, 0, h * 0.24, w, h);
-      }
       updateSky(dt);
       carMesh.nimbu.rotation.z = Math.sin(game.t * 3) * 0.2;
       game.ambT -= dt; if (game.ambT <= 0) { game.ambT = rand(2.5, 6); AU.honk(pick(['car', 'auto', 'bus', 'bike']), rand(-1, 1), rand(0.7, 1)); } // distant city
@@ -1851,8 +1979,8 @@ requestAnimationFrame(frame);
 
 // debug hook for automated playtesting
 window.__game = {
-  car, game, obstacles: () => obstacles, keys, pressed, startGame, setPaused, AU, get state() { return state; },
-  poojaStep(sec) { for (let t = 0; t < sec && pooja; t += 1 / 60) updatePooja(1 / 60); renderer.render(scene, camera); return pooja ? pooja.step : 'done'; },
+  car, game, obstacles: () => obstacles, keys, pressed, startGame, setPaused, AU, showroom, get state() { return state; },
+  poojaStep(sec) { for (let t = 0; t < sec && pooja; t += 1 / 60) updatePooja(1 / 60); return pooja ? pooja.step : 'done'; },
   // fast-forward the sim: ctl(t) may set keys/pressed each tick
   sim(sec, ctl) { const dt = 1 / 60; for (let t = 0; t < sec && state === 'playing'; t += dt) { ctl && ctl(t); update(dt); syncVisuals(dt); updateParticles(dt); for (const k in pressed) pressed[k] = false; } updateHUD(1); renderer.render(scene, camera); return { s: +car.s.toFixed(1), x: +car.x.toFixed(2), y: +car.y.toFixed(2), speed: +car.speed.toFixed(1), air: +car.air.toFixed(0), clock: fmtClock(game.clock), state, crashes: game.crashes, swag: Math.round(game.swag) }; },
 };

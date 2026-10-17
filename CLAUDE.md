@@ -16,6 +16,7 @@ A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layou
 - World: forward is **-Z**. `car.s` is distance travelled; the car's world z is `-car.s`. Obstacles store `x`, `z`, `w`, `d`, `h`, `vz` (forward speed). Collision is an AABB in x/z plus a height check (`car.y >= o.h` means you're above it).
 - Tuning knobs at the top of `game.js`: `MODES` (Chill/Sport/Plaid cruise speeds), `SEC_PER_MIN` (clock difficulty; the clock scales with mode), `STAGES` / `STAGE_CFG` (route and traffic mix), plus hop, hover and gas constants.
 - The car must never rest on a vehicle roof: from the chase cam it looks like a stuck hover. Landing on a roof triggers a bounce (`ROOF HOP`) that clears a bus and pushes the car forward.
+- Without an env map, metallic materials render near-black, so "chrome" is a bright low-metalness grey.
 - Flat decals (shadows, potholes) use the `DECAL` polygon-offset material options. Without them they z-fight with the road and flicker.
 - Messaging channels, one per event, never both:
   - `flash()`: centre text for on-road events (crashes, stunts).
@@ -26,7 +27,8 @@ A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layou
 - Keep the scene calm. Buildings and vehicles carry almost no text (a few shop boards, HORN OK PLEASE on tankers), and the menus stay minimal. The user pushed back on visual clutter, so add detail sparingly.
 - Audio is SFX only (no music, removed as annoying), with one mute switch (`AU.setMuted`, persisted as `rb-muted`). Every voice, including the reverb return, must route through `AU.sfx` so that pause and mute really silence it.
 - Fan parody: keep the "not affiliated with Tesla" line on the title screen and in the README.
-- Vehicles: `MODELS` (Roadster, Rocket, Namma Spec, Shaadi Edition) and `PAINTS` sit above `buildRoadster(cfg)`. Each model has gameplay `mods` (hover drain, hop, steer, horn reach), applied through `VEH`. Selection persists as `rb-car`. The showroom panel (`#garage`) opens from the subtle `#vehBtn` link on the title screen. "Take delivery" plays the lemon-and-coconut pooja (`takeDelivery` / `updatePooja`), but only when the choice actually changed. Debug hook: `__game.poojaStep(sec)`.
+- Vehicles: `MODEL_ORDER` / `MODELS` (Roadster, Auto, Ambassador, Shaadi Edition) and `PAINTS` sit above `buildRoadster(cfg)`. **Every version keeps the Roadster body.** Variants only dress it (Auto: canvas canopy, yellow nose, 3 wheels; Ambassador: chrome grille, round lamps, curtains, beacon). Gameplay `mods` (hover drain, hop, steer, horn reach) are applied through `VEH`, and horns are per model (`AU.playerHorn(model)`). Saved as `rb-car`.
+- Showroom: its own room (`showroomScene`: dark studio, turntable, light strips, marigold toran). `setGarage(open, 'title'|'pause')` moves `carMesh` into that room and back. ‹ › or ←/→ swap cars, H tests the horn. Opens from the title card's "Enter the showroom" or the pause menu's "Change car". "Take delivery" plays the lemon-and-coconut pooja, but only when the choice changed. Debug: `__game.showroom.rot`, `__game.poojaStep(sec)`.
 
 ## Testing
 - `window.__game` is a debug hook. `__game.sim(seconds, ctlFn)` fast-forwards the simulation at a fixed 60 Hz, independent of requestAnimationFrame (which throttles in hidden or automated tabs). Set `__game.keys.*` / `__game.pressed.*` inside `ctlFn` to drive input. It returns `{s, x, y, speed, air, clock, state, crashes, swag}`.
