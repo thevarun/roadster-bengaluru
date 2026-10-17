@@ -31,7 +31,7 @@ Open http://localhost:8742.
 | P / Esc | Pause |
 | M | Mute |
 
-Visit the showroom (bottom right of the title screen, or Change car from pause): the launch-event Roadster, the three-wheeled Roadster Auto, the chrome-and-red-beacon Roadster Ambassador, or the marigold-draped Shaadi Edition. Each has its own horn and handling, and delivery includes a lemon-and-coconut pooja.
+Visit the showroom (bottom right of the title screen, or Change car from pause): the launch-event Roadster, the auto-livery Roadster Auto, the chrome-and-red-beacon Roadster Ambassador, or the marigold-draped Shaadi Edition. Each has its own horn and handling, and delivery includes a lemon-and-coconut pooja.
 
 Drive modes (Chill / Sport / Plaid) change cruise speed. The clock scales with the mode, so Chill isn't a handicap. Touch controls appear on phones.
 

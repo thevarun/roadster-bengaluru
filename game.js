@@ -283,7 +283,7 @@ const MODEL_ORDER = ['roadster', 'auto', 'ambassador', 'shaadi'];
 const MODELS = {
   roadster: { name: 'Roadster', price: 'Ex-showroom ₹2.5 Cr*', tag: 'The one from the launch event. *Plus GST, road tax, insurance and "handling charges".', paint: 'white',
     mods: { hover: 1, hop: 1, steer: 1, horn: 1 }, stats: { Hover: 3, 'Gap squeeze': 3, Horn: 3 } },
-  auto: { name: 'Roadster Auto', price: '₹2.5 Cr · Minimum fare ₹30, meter "not working"', tag: 'Three wheels, a canvas hood and infinite confidence. Squeezes through gaps nothing else fits.', livery: 'Auto green & yellow',
+  auto: { name: 'Roadster Auto', price: '₹2.5 Cr · Minimum fare ₹30, meter "not working"', tag: 'Auto livery, a canvas hood and infinite confidence. Squeezes through gaps nothing else fits, and honks like it means it.', livery: 'Auto green & yellow',
     mods: { hover: 1, hop: 1, steer: 1.25, horn: 1.2 }, stats: { Hover: 3, 'Gap squeeze': 5, Horn: 4 } },
   ambassador: { name: 'Roadster Ambassador', price: '₹2.5 Cr · Red beacon "on request"', tag: 'A Roadster with Amby manners: chrome grille, round headlamps, VIP curtains and a red beacon, so traffic actually moves. Turns like it\'s 1958.', paint: 'white',
     mods: { hover: 1.1, hop: 0.92, steer: 0.85, horn: 2.0 }, stats: { Hover: 3, 'Gap squeeze': 2, Horn: 5 } },
@@ -297,13 +297,6 @@ let VEH = MODELS[carCfg.model].mods;
 const vehicleLabel = () => MODELS[carCfg.model].name + ' · ' + (MODELS[carCfg.model].livery || PAINTS[carCfg.paint][0]);
 
 // shared bits every version carries
-function addNimbu(g, x, y, z) {
-  const nm = new THREE.Group(); nm.position.set(x, y, z); g.add(nm);
-  box(nm, 0.012, 0.22, 0.012, 0x111111, 0, -0.11, 0);
-  sph(nm, 0.07, 0xf6e13a, 0, -0.26, 0, 1, 1.15, 1);
-  for (let i = 0; i < 4; i++) { const ch = cyl(nm, 0.025, 0.2, 0x1f9d3a, 0, 0, 0); ch.scale.set(0.03, 0.12, 0.03); ch.position.y = -0.4 - i * 0.07; }
-  return nm;
-}
 function addGlow(g) {
   const glow = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 5), new THREE.MeshBasicMaterial({ map: radialTex('rgba(150,220,255,1)', 'rgba(150,220,255,0)'), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 }));
   glow.rotation.x = -Math.PI / 2; glow.position.y = 0.05; g.add(glow); g.glow = glow;
@@ -352,23 +345,22 @@ function buildRoadster(cfg = carCfg) {
   for (const sx of [-1, 1]) {
     box(g, 0.06, 0.13, 3.9, 0, sx * 1.08, 0.33, 0.05, black);
     box(g, 0.03, 0.2, 0.75, 0, sx * 1.06, 0.62, 0.72, black);
-    for (const wz of auto ? [1.5] : [-1.45, 1.5]) {
+    for (const wz of [-1.45, 1.5]) {
       const arch = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 6, 18, Math.PI), black);
       arch.rotation.y = Math.PI / 2; arch.position.set(sx * 1.09, 0.42, wz); g.add(arch);
     }
   }
-  // wheels with Cybercab-style aero covers (the auto gets a single front wheel, obviously)
+  // wheels with Cybercab-style aero covers
   const tire = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
   const cap = amb ? chrome : new THREE.MeshStandardMaterial({ map: aeroCapTex(), roughness: 0.35, metalness: 0.4 });
   g.wheels = [];
-  const wheelSpots = auto ? [[0, -1.75, 0.3], [-1, 1.5, 0.42], [1, 1.5, 0.42]] : [[-1, -1.45, 0.42], [1, -1.45, 0.42], [-1, 1.5, 0.42], [1, 1.5, 0.42]];
+  const wheelSpots = [[-1, -1.45, 0.42], [1, -1.45, 0.42], [-1, 1.5, 0.42], [1, 1.5, 0.42]];
   for (const [x, z, r] of wheelSpots) {
     const wg = new THREE.Group(); wg.position.set(x * 1.04, r, z); g.add(wg);
     cyl(wg, r, 0.3, 0, 0, 0, 0, 'x', tire);
-    for (const side of x === 0 ? [-1, 1] : [x]) { const disc = new THREE.Mesh(new THREE.CircleGeometry(r * 0.8, 20), cap); disc.position.x = side * 0.155; disc.rotation.y = side * Math.PI / 2; wg.add(disc); }
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(r * 0.8, 20), cap); disc.position.x = x * 0.155; disc.rotation.y = x * Math.PI / 2; wg.add(disc);
     g.wheels.push(wg);
   }
-  if (auto) { box(g, 0.08, 0.5, 0.08, 0x2a2a2a, 0, 0.5, -1.75); }                       // front fork
   // nose: splitter + light bar
   box(g, 1.9, 0.05, 0.4, 0, 0, 0.22, -2.3, black);
   if (!amb) box(g, 1.7, 0.04, 0.04, 0, 0, 0.44, -2.56, new THREE.MeshBasicMaterial({ color: 0xffffff }));
@@ -386,13 +378,11 @@ function buildRoadster(cfg = carCfg) {
     const t = i / 10, x = (t - 0.5) * 1.3, z = -1.3 - Math.cos((t - 0.5) * Math.PI) * 0.4;
     sph(g, 0.065, i % 2 ? 0xff8c00 : 0xffb300, x, 0.5 + (z + 2.25) / 1.4 * 0.31 + 0.06, z);
   }
-  g.nimbu = addNimbu(g, 0.35, 0.36, -2.56);
-  if (auto) { // yellow beltline, mud flaps with reflectors, a second nimbu-mirchi out back
+  if (auto) { // yellow beltline, mud flaps with reflectors
     for (const sx of [-1, 1]) {
       box(g, 0.03, 0.12, 3.9, 0, sx * 1.06, 0.66, 0.05, yel);
       box(g, 0.3, 0.32, 0.03, 0x111111, sx * 1.0, 0.2, 2.1); box(g, 0.1, 0.05, 0.035, 0xe82127, sx * 1.0, 0.3, 2.103);
     }
-    addNimbu(g, -0.6, 0.6, 2.6);
   }
   if (amb) { // Ambassador cues on a Roadster: chrome grille, round headlamps, bumpers, side strip, VIP curtains, red beacon
     box(g, 1.0, 0.15, 0.04, 0, 0, 0.39, -2.55, chrome);
@@ -975,6 +965,7 @@ const AU = {
   honk(kind = 'car', pan = 0, dist = 0, delay = 0) {
     if (!this.ok()) return;
     if (kind === 'truck') return this.truckHorn(pan, dist, delay);
+    if (kind === 'auto') return this.autoHorn(pan, dist, delay);
     const H = HORNS[kind] || HORNS.car, ctx = this.ctx, t = this.now(delay);
     const inp = this.spatial(pan, dist, 0.1);
     const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = H.bp; bp.Q.value = H.q; bp.connect(inp);
@@ -994,15 +985,39 @@ const AU = {
     const tune = pick([[523, 659, 784, 659, 587, 523], [659, 784, 880, 784, 659], [587, 659, 587, 523, 587]]);
     tune.forEach((n, i) => { const g = ctx.createGain(); this.env(g, t + i * 0.14, 0.01, 0.07, 0.1, 0.03); g.connect(lp); this.osc('square', n, t + i * 0.14, 0.15, g); this.osc('triangle', n * 1.003, t + i * 0.14, 0.15, g); });
   },
-  playerHorn(model = 'roadster') { // the Roadster: crisp, expensive, dual-tone. Also ignored.
+  playerHorn(model = 'roadster') {
     if (!this.ok()) return;
-    if (model === 'auto') return this.honk('auto', 0, 0);
-    if (model === 'ambassador') return this.hooter();
+    if (model === 'auto') return this.autoHorn(0, 0);
+    if (model === 'ambassador') return this.ambyHorn();
     if (model === 'shaadi') return this.bandBaaja();
-    const ctx = this.ctx, t = this.now(), inp = this.spatial(0, 0, 0.08);
-    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = 0.8; bp.connect(inp);
-    const g = ctx.createGain(); this.env(g, t, 0.01, 0.35, 0.24, 0.06); g.connect(bp);
-    this.osc('sawtooth', 440, t, 0.35, g); this.osc('sawtooth', 554.4, t, 0.35, g);
+    // Roadster: a modern EV horn. Clean major-third dual tone that snaps into pitch, opens up, and lifts slightly at the tail.
+    const ctx = this.ctx, t = this.now(), inp = this.spatial(0, 0, 0.12);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 1.1; lp.connect(inp);
+    lp.frequency.setValueAtTime(1600, t); lp.frequency.linearRampToValueAtTime(4200, t + 0.06);
+    const g = ctx.createGain(); this.env(g, t, 0.006, 0.3, 0.22, 0.14); g.connect(lp);
+    for (const [f, type, v] of [[523.25, 'sawtooth', 0.45], [659.25, 'sawtooth', 0.45], [261.6, 'sine', 0.8]]) {
+      const vg = ctx.createGain(); vg.gain.value = v; vg.connect(g);
+      const o = this.osc(type, f * 0.96, t, 0.45, vg);
+      o.frequency.exponentialRampToValueAtTime(f, t + 0.035); o.frequency.exponentialRampToValueAtTime(f * 1.04, t + 0.38);
+    }
+  },
+  ambyHorn() { // classic dual-tone "paarp-paarp", the way an old Amby announces itself
+    const ctx = this.ctx, t = this.now(), inp = this.spatial(0, 0, 0.1);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1250; bp.Q.value = 0.8; bp.connect(inp);
+    for (const [at, d] of [[0, 0.17], [0.27, 0.26]]) {
+      const g = ctx.createGain(); this.env(g, t + at, 0.01, 0.34, d, 0.05); g.connect(bp);
+      this.osc('sawtooth', 392, t + at, d + 0.08, g); this.osc('sawtooth', 494, t + at, d + 0.08, g);
+    }
+  },
+  autoHorn(pan = 0, dist = 0, delay = 0) { // shrill, nasal electric "pee-peep" of a Bengaluru auto
+    if (!this.ok()) return;
+    const ctx = this.ctx, t = this.now(delay), inp = this.spatial(pan, dist, 0.08);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2300; bp.Q.value = 1.4; bp.connect(inp);
+    const pj = rand(0.95, 1.06);
+    for (const [at, d] of [[0, 0.08], [0.14, 0.17]]) {
+      const g = ctx.createGain(); this.env(g, t + at, 0.004, 0.42, d, 0.03); g.connect(bp);
+      for (const f of [760, 1140]) { const o = this.osc('square', f * pj, t + at, d + 0.05, g); if (at) o.frequency.exponentialRampToValueAtTime(f * pj * 0.96, t + at + d); }
+    }
   },
 
   // ---------- sfx
@@ -1060,13 +1075,6 @@ const AU = {
       this.osc('sawtooth', f, t + at, d + 0.05, g); this.osc('square', f * 1.004, t + at, d + 0.05, g); return at + d;
     }, 0);
     this.noise(t, 0.1, 'highpass', 6000, 0.7, 0.12, inp); this.noise(t + 0.48, 0.1, 'highpass', 6000, 0.7, 0.12, inp); // cymbal ticks
-  },
-  hooter() { // VIP siren whoop for the Ambassador's red beacon
-    if (!this.ok()) return;
-    const ctx = this.ctx, t = this.now(), inp = this.spatial(0, 0, 0.15);
-    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 0.9; bp.connect(inp);
-    const g = ctx.createGain(); this.env(g, t, 0.02, 0.3, 0.62, 0.08); g.connect(bp);
-    const o = this.osc('sawtooth', 620, t, 0.8, g); o.frequency.linearRampToValueAtTime(1050, t + 0.32); o.frequency.linearRampToValueAtTime(620, t + 0.66);
   },
   bell() { // temple bell for the delivery pooja
     if (!this.ok()) return;
@@ -1602,9 +1610,7 @@ function syncVisuals(dt) {
   car.pitch = lerp(car.pitch, pitchT, 1 - Math.exp(-dt * 6));
   carMesh.rotation.set(car.pitch, -car.vx * 0.012, car.tilt + (car.rolling ? car.rollDir * -car.roll * Math.PI * 2 : 0));
   for (const w of carMesh.wheels) w.children[0].rotation.x += car.speed * dt / 0.37;
-  carMesh.nimbu.rotation.z = Math.sin(game.t * 7) * 0.15 + car.vx * 0.03;
   animateCarExtras(game.t);
-  carMesh.nimbu.rotation.x = -car.speed * 0.008;
   const hover = car.thrust * (car.onGround ? 0 : 1);
   carMesh.glow.material.opacity = hover * 0.9; carMesh.glow.position.y = -car.y + 0.05 + 0.01; carMesh.glow.scale.setScalar(1 + car.y * 0.1);
 
@@ -1776,7 +1782,6 @@ function showroomFrame(dt) {
     camera.setViewOffset(w, h, 0, h * (portrait ? 0.1 : 0.07), w, h);   // nudge the car up, clear of the bottom panel
   }
   if (camera.fov !== (portrait ? 70 : 50)) { camera.fov = portrait ? 70 : 50; camera.updateProjectionMatrix(); }
-  carMesh.nimbu.rotation.z = Math.sin(game.t * 3) * 0.2;
   animateCarExtras(showroom.t);
   AU.setEngine(0, 0);
 }
@@ -1906,7 +1911,6 @@ function frame(now) {
       camera.position.set(car.x + Math.sin(a) * r, 2.4 * (portrait ? 1.4 : 1), Math.cos(a) * r);
       camera.lookAt(car.x, 0.6, 0);
       updateSky(dt);
-      carMesh.nimbu.rotation.z = Math.sin(game.t * 3) * 0.2;
       game.ambT -= dt; if (game.ambT <= 0) { game.ambT = rand(2.5, 6); AU.honk(pick(['car', 'auto', 'bus', 'bike']), rand(-1, 1), rand(0.7, 1)); } // distant city
     } else {
       updateParticles(dt);
