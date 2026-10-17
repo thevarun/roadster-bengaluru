@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Roadster: Namma Bengaluru</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&family=Baloo+2:wght@600;800&family=Noto+Sans+Kannada:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=6">
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Tesla-minimal HUD over desi chaos -->
+<div id="hud" class="hidden">
+  <div class="panel speedo">
+    <div class="gear"><b>D</b> · <span id="modeLbl">SPORT</span></div>
+    <div class="spd"><span id="spd">0</span><small>km/h</small></div>
+    <div class="avg">Bengaluru avg: 18 km/h</div>
+  </div>
+
+  <div class="panel topc">
+    <button id="pauseBtn" aria-label="Pause"><svg width="10" height="12" viewBox="0 0 10 12"><rect x="0" y="0" width="3" height="12" rx="1" fill="#fff"/><rect x="7" y="0" width="3" height="12" rx="1" fill="#fff"/></svg></button>
+    <div class="clockrow">
+      <div><div class="lbl">NOW</div><div id="clock" class="clock">8:52</div></div>
+      <div class="sep"></div>
+      <div><div class="lbl">STANDUP</div><div class="clock dim">9:30</div></div>
+    </div>
+    <div class="prog"><div id="progfill"></div><div id="progcar"></div><div id="progticks"></div></div>
+    <div id="stageName" class="stage">HSR Layout</div>
+  </div>
+
+  <div class="panel rightp">
+    <div class="lbl">COLD GAS</div>
+    <div class="bar"><div id="airfill"></div></div>
+    <div class="lbl" style="margin-top:10px">SWAG</div>
+    <div id="swag" class="swag">0</div>
+    <div class="lbl" style="margin-top:8px">CHALLANS</div>
+    <div id="challan" class="challan">₹0</div>
+  </div>
+
+  <div id="flash"></div>
+  <div id="banner"><div class="b1"></div><div class="b2"></div></div>
+  <div id="hint"></div>
+  <div id="toasts"></div>
+  <div id="foam"></div>
+
+  <div class="ticker"><span class="tag">📻 RADIO 98.3</span><div class="tickwrap"><div id="tick"></div></div></div>
+  <div class="keys">←→ steer · <b>SPACE</b> hop (hold = hover) · <b>F</b> barrel roll · <b>W</b> thrust · <b>S</b> brake · <b>H</b> horn · <b>M</b> mute · <b>P</b> pause</div>
+</div>
+
+<div id="touch" class="hidden">
+  <div class="tl">
+    <button data-k="left">◀</button><button data-k="right">▶</button><button data-k="brake" class="sm">BRAKE</button>
+  </div>
+  <div class="tr">
+    <button data-k="horn" class="sm">HORN</button><button data-k="roll" class="sm">ROLL</button>
+    <button data-k="boost" class="sm">THRUST</button><button data-k="hop" class="big">HOP</button>
+  </div>
+</div>
+
+<div id="title" class="overlay">
+  <div class="tcard">
+    <div class="brand">T E S L A</div>
+    <h1>ROADSTER</h1>
+    <div class="ed">ನಮ್ಮ ಬೆಂಗಳೂರು Edition</div>
+    <p class="pitch">You just took delivery of a ₹2.5 crore car that can <b>fly</b>.<br>You still have to get from HSR Layout to Whitefield by <b>9:30 AM</b> standup.<br>Through <b>Silk Board</b>.</p>
+    <ul class="ctl">
+      <li><b>← →</b> steer (lanes are a suggestion)</li>
+      <li><b>SPACE</b> hop · <b>hold</b> to hover on cold gas</li>
+      <li><b>F</b> barrel roll in the air for swag</li>
+      <li><b>W</b> rear thrusters · <b>S</b> brake · <b>H</b> horn · <b>P</b> pause</li>
+      <li>Fly over cows to show respect. Never hit a cow.</li>
+    </ul>
+    <div class="modes"><div class="lbl">DRIVE MODE</div><div class="seg"><button data-mode="chill">Chill</button><button data-mode="sport">Sport</button><button data-mode="plaid">Plaid</button></div></div>
+    <button id="startBtn">START COMMUTE</button>
+    <div class="fine">Press SPACE / ENTER · Sound on 🔊</div>
+    <div class="fine legal">Fan-made parody. Not affiliated with Tesla, SpaceX, BMTC or any cow.</div>
+  </div>
+</div>
+
+<div id="pause" class="overlay dim hidden">
+  <div class="tcard">
+    <div class="brand">PAUSED</div>
+    <h2>Chai break ☕</h2>
+    <div class="ed">Traffic will wait. It always does.</div>
+    <div class="modes"><div class="lbl">DRIVE MODE</div><div class="seg"><button data-mode="chill">Chill</button><button data-mode="sport">Sport</button><button data-mode="plaid">Plaid</button></div></div>
+    <div class="btnrow"><button id="resumeBtn" class="primary">RESUME</button><button id="muteBtn" class="ghost">SOUND: ON</button><button id="restartBtn" class="ghost">RESTART</button></div>
+    <div class="fine">P / Esc to resume</div>
+  </div>
+</div>
+
+<div id="over" class="overlay hidden">
+  <div class="tcard">
+    <div class="brand">TRIP SUMMARY</div>
+    <h2 id="oTitle">Made it.</h2>
+    <div id="oSub" class="ed"></div>
+    <div id="oStats" class="stats"></div>
+    <button id="againBtn">COMMUTE AGAIN TOMORROW</button>
+    <div class="fine">Press ENTER</div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module" src="game.js?v=6"></script>
+</body>
+</html>
