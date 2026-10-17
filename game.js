@@ -182,7 +182,7 @@ const earth = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLa
 earth.rotation.x = -Math.PI / 2; earth.position.y = -0.02; scene.add(earth);
 
 // ---------------------------------------------------------------------
-//  Sky: hazy sun, drifting clouds, circling black kites, far skyline with cranes.
+//  Sky: hazy sun, drifting clouds, circling black kites, far skyline.
 //  Everything here follows the camera, so it reads as "infinitely far" and stays calm.
 // ---------------------------------------------------------------------
 const sky = new THREE.Group(); scene.add(sky);
@@ -834,7 +834,7 @@ function updateParticles(dt) {
 }
 
 // ---------------------------------------------------------------------
-//  Audio — all synthesized, zero assets
+//  Audio: CC0 horn samples (audio/) plus WebAudio synth voices
 //  sfx bus (incl. street reverb) -> compressor -> master. One mute switch (master).
 //  Horns are spatial (pan + distance lowpass) and type-specific.
 // ---------------------------------------------------------------------
