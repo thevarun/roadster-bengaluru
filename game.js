@@ -279,14 +279,12 @@ function aeroCapTex() { // Cybercab-style flat aero wheel cover
 // flat decals get a depth offset so they never z-fight with the road (that was the flicker)
 const DECAL = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
 // ---------- vehicle versions (showroom)
-const MODEL_ORDER = ['roadster', 'auto', 'ambassador', 'shaadi'];
+const MODEL_ORDER = ['roadster', 'taxi', 'shaadi'];
 const MODELS = {
   roadster: { name: 'Roadster', price: 'Ex-showroom ₹2.5 Cr*', tag: 'The one from the launch event. *Plus GST, road tax, insurance and "handling charges".', paint: 'white',
     mods: { hover: 1, hop: 1, steer: 1, horn: 1 }, stats: { Hover: 3, 'Gap squeeze': 3, Horn: 3 } },
-  auto: { name: 'Roadster Auto', price: '₹2.5 Cr · Minimum fare ₹30, meter "not working"', tag: 'Auto livery, a canvas hood and infinite confidence. Squeezes through gaps nothing else fits, and honks like it means it.', livery: 'Auto green & yellow',
-    mods: { hover: 1, hop: 1, steer: 1.25, horn: 1.2 }, stats: { Hover: 3, 'Gap squeeze': 5, Horn: 4 } },
-  ambassador: { name: 'Roadster Ambassador', price: '₹2.5 Cr · Red beacon "on request"', tag: 'A Roadster with Amby manners: chrome grille, round headlamps, VIP curtains and a red beacon, so traffic actually moves. Turns like it\'s 1958.', paint: 'white',
-    mods: { hover: 1.1, hop: 0.92, steer: 0.85, horn: 2.0 }, stats: { Hover: 3, 'Gap squeeze': 2, Horn: 5 } },
+  taxi: { name: 'Roadster Kaali-Peeli', price: '₹2.5 Cr · Flag-down fare ₹28', tag: 'A Mumbai taxi that took a wrong turn and ended up on ORR. Black and yellow, meter on the fender, squeezes through gaps nothing else fits.', livery: 'Kaali-peeli (black & yellow)',
+    mods: { hover: 1, hop: 1, steer: 1.25, horn: 1.3 }, stats: { Hover: 3, 'Gap squeeze': 5, Horn: 4 } },
   shaadi: { name: 'Roadster Shaadi Edition', price: '₹2.5 Cr + ₹3 L in marigolds', tag: 'Decked out for the baraat. The horn plays the band-baaja and traffic parts for the groom. All those flowers make it hover less.', paint: 'white',
     mods: { hover: 1.3, hop: 0.95, steer: 1, horn: 1.8 }, stats: { Hover: 2, 'Gap squeeze': 3, Horn: 5 } },
 };
@@ -311,8 +309,8 @@ function paintMat(cfg) {
 
 function buildRoadster(cfg = carCfg) {
   const g = new THREE.Group();
-  const auto = cfg.model === 'auto', amb = cfg.model === 'ambassador';
-  const body = auto ? new THREE.MeshStandardMaterial({ color: 0x1f8a3a, roughness: 0.35 }) : paintMat(cfg);
+  const taxi = cfg.model === 'taxi';
+  const body = taxi ? new THREE.MeshStandardMaterial({ color: 0x17181b, roughness: 0.3, metalness: 0.35 }) : paintMat(cfg);
   const yel = new THREE.MeshStandardMaterial({ color: 0xf5c518, roughness: 0.4 });
   const glass = new THREE.MeshStandardMaterial({ color: 0x0a0c11, roughness: 0.08, metalness: 0.7 });
   const black = new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.55 });
@@ -323,23 +321,16 @@ function buildRoadster(cfg = carCfg) {
   s.moveTo(-2.42, 0.3); s.lineTo(-2.46, 0.4); s.lineTo(-2.25, 0.48); s.lineTo(-0.85, 0.79); s.lineTo(1.0, 0.92);
   s.lineTo(2.0, 0.97); s.lineTo(2.44, 0.93); s.lineTo(2.47, 0.56); s.lineTo(2.25, 0.26); s.lineTo(-2.1, 0.24); s.closePath();
   const bodyMesh = new THREE.Mesh(wedge(s, W, 0.45, 0.5, 0.16, 0.08), body); bodyMesh.rotation.y = -Math.PI / 2; g.add(bodyMesh);
-  if (auto) {
-    // yellow nose like an auto's front, black canvas hood instead of the glass canopy, grab rails, fare meter
-    const n = new THREE.Shape();
-    n.moveTo(-2.42, 0.3); n.lineTo(-2.46, 0.4); n.lineTo(-2.25, 0.48); n.lineTo(-0.85, 0.79); n.lineTo(-0.85, 0.24); n.lineTo(-2.1, 0.24); n.closePath();
-    const nose = new THREE.Mesh(wedge(n, W + 0.02, 0.45, 0.5, 0.16, 0.085), new THREE.MeshStandardMaterial({ color: 0xf5c518, roughness: 0.4, ...DECAL }));
-    nose.rotation.y = -Math.PI / 2; g.add(nose);
-    for (const sx of [-1, 1]) {
-      box(g, 0.04, 0.07, 2.7, 0, sx * 0.78, 0.8, 0.55, yel);                         // yellow band along the canvas hood
-      cyl(g, 0.022, 1.6, 0, sx * 0.86, 0.9, 0.5, 'z', chrome);                      // grab rails
-    }
-    box(g, 0.2, 0.24, 0.14, 0x111111, -1.0, 0.98, -0.55);                              // fare meter
-    box(g, 0.13, 0.06, 0.01, 0, -1.0, 1.02, -0.62, new THREE.MeshBasicMaterial({ color: 0xff3030 }));
+  if (taxi) { // Mumbai kaali-peeli: TAXI roof sign and an old flag meter on the fender
+    box(g, 0.62, 0.17, 0.24, 0xf5c518, 0, 1.33, 0.3);
+    for (const sz of [-1, 1]) signPlane(g, textTex('TAXI', { bg: '#f5c518', fg: '#111', font: '800 90px Inter', w: 256, h: 96 }), 0.56, 0.14, 0, 1.33, 0.3 + sz * 0.125, sz > 0 ? 0 : Math.PI);
+    box(g, 0.16, 0.22, 0.14, 0x1a1a1a, -1.02, 0.78, -1.75);
+    const flag = box(g, 0.04, 0.2, 0.1, 0xd61f1f, -1.02, 0.97, -1.72); flag.rotation.x = -0.4;
   }
-  // canopy: glass on the Roadster, black canvas on the Auto — same shape either way
+  // canopy: glass on the Roadster, yellow roof on the taxi — same shape either way
   const c = new THREE.Shape();
   c.moveTo(-0.95, 0.74); c.lineTo(-0.1, 1.2); c.lineTo(0.75, 1.24); c.lineTo(1.6, 1.07); c.lineTo(2.05, 0.95); c.lineTo(2.0, 0.86); c.lineTo(-0.95, 0.68); c.closePath();
-  const canopy = new THREE.Mesh(wedge(c, 1.5, 0.8, 0.45, 0.3, 0.05), auto ? new THREE.MeshStandardMaterial({ color: 0x141518, roughness: 0.95 }) : glass);
+  const canopy = new THREE.Mesh(wedge(c, 1.5, 0.8, 0.45, 0.3, 0.05), taxi ? yel : glass); // the taxi's yellow roof
   canopy.rotation.y = -Math.PI / 2; g.add(canopy);
   // black lower chines, wheel arches, side intakes
   for (const sx of [-1, 1]) {
@@ -352,7 +343,7 @@ function buildRoadster(cfg = carCfg) {
   }
   // wheels with Cybercab-style aero covers
   const tire = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
-  const cap = amb ? chrome : new THREE.MeshStandardMaterial({ map: aeroCapTex(), roughness: 0.35, metalness: 0.4 });
+  const cap = new THREE.MeshStandardMaterial({ map: aeroCapTex(), roughness: 0.35, metalness: 0.4 });
   g.wheels = [];
   const wheelSpots = [[-1, -1.45, 0.42], [1, -1.45, 0.42], [-1, 1.5, 0.42], [1, 1.5, 0.42]];
   for (const [x, z, r] of wheelSpots) {
@@ -363,48 +354,41 @@ function buildRoadster(cfg = carCfg) {
   }
   // nose: splitter + light bar
   box(g, 1.9, 0.05, 0.4, 0, 0, 0.22, -2.3, black);
-  if (!amb) box(g, 1.7, 0.04, 0.04, 0, 0, 0.44, -2.56, new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  box(g, 1.7, 0.04, 0.04, 0, 0, 0.44, -2.56, new THREE.MeshBasicMaterial({ color: 0xffffff }));
   // tail: black fascia, full-width light bar, diffuser
   box(g, 1.92, 0.3, 0.04, 0, 0, 0.67, 2.56, black);
   box(g, 1.96, 0.06, 0.05, 0, 0, 0.87, 2.56, new THREE.MeshBasicMaterial({ color: 0xff2a2a }));
   box(g, 1.6, 0.14, 0.18, 0, 0, 0.3, 2.36, black);
   // active rear wing with endplates
-  box(g, 2.0, 0.05, 0.42, 0, 0, 1.32, 2.14, auto ? yel : body);
+  box(g, 2.0, 0.05, 0.42, 0, 0, 1.32, 2.14, body);
   for (const sx of [-1, 1]) { box(g, 0.04, 0.22, 0.46, 0, sx * 1.0, 1.26, 2.14, black); box(g, 0.05, 0.32, 0.1, 0, sx * 0.55, 1.12, 2.16, black); }
   addNozzles(g, [-0.72, -0.45, 0.45, 0.72], 0.66, 2.6);
   addGlow(g);
-  // marigold garland on the hood (it was just blessed at the temple)
-  for (let i = 0; i <= 10; i++) {
-    const t = i / 10, x = (t - 0.5) * 1.3, z = -1.3 - Math.cos((t - 0.5) * Math.PI) * 0.4;
-    sph(g, 0.065, i % 2 ? 0xff8c00 : 0xffb300, x, 0.5 + (z + 2.25) / 1.4 * 0.31 + 0.06, z);
-  }
-  if (auto) { // yellow beltline, mud flaps with reflectors
+  if (taxi) for (const sx of [-1, 1]) { box(g, 0.3, 0.32, 0.03, 0x111111, sx * 1.0, 0.2, 2.1); box(g, 0.1, 0.05, 0.035, 0xe82127, sx * 1.0, 0.3, 2.103); } // mud flaps
+  if (cfg.model === 'shaadi') { // baraat car: garlands everywhere, batched into one instanced mesh
+    const fl = [], MARI = [0xff8c00, 0xffb300, 0xff5a1f], ROSE = [0xe8336f, 0xff3b6b, 0xd61f4f, 0xfff4f0];
+    const strand = (fn, n, r = 0.075, pal = MARI) => { for (let i = 0; i <= n; i++) { const [x, y, z] = fn(i / n); fl.push([x, y, z, r, pal[i % pal.length]]); } };
+    const hoodY = z => 0.5 + (z + 2.25) / 1.4 * 0.31 + 0.07;
+    const CAN = [[-0.95, 0.74], [-0.1, 1.2], [0.75, 1.24], [1.6, 1.07], [2.05, 0.95]];
+    const canY = z => { for (let i = 1; i < CAN.length; i++) if (z <= CAN[i][0]) { const [z0, y0] = CAN[i - 1], [z1, y1] = CAN[i]; return y0 + (y1 - y0) * (z - z0) / (z1 - z0); } return 0.95; };
+    strand(t => { const z = -1.3 - Math.cos((t - 0.5) * Math.PI) * 0.4; return [(t - 0.5) * 1.3, hoodY(z), z]; }, 12);       // hood garland
+    for (const d of [-1, 1]) strand(t => { const z = -2.15 + t * 1.25; return [d * (t - 0.5) * 1.6, hoodY(z), z]; }, 14); // X across the bonnet
+    for (const z of [-0.2, 0.7]) strand(t => [(t - 0.5) * 1.9, 0.95 + Math.sin(t * Math.PI) * 0.36, z], 16);              // over the roof
     for (const sx of [-1, 1]) {
-      box(g, 0.03, 0.12, 3.9, 0, sx * 1.06, 0.66, 0.05, yel);
-      box(g, 0.3, 0.32, 0.03, 0x111111, sx * 1.0, 0.2, 2.1); box(g, 0.1, 0.05, 0.035, 0xe82127, sx * 1.0, 0.3, 2.103);
+      strand(t => { const z = -0.9 + t * 2.9; return [sx * 0.6, canY(z) + 0.03, z]; }, 20);                              // canopy edges
+      strand(t => [sx * 1.1, 0.62 - Math.sin(t * Math.PI * 3) * 0.06, -2.1 + t * 4.2], 24);                                // along the sides
     }
-  }
-  if (amb) { // Ambassador cues on a Roadster: chrome grille, round headlamps, bumpers, side strip, VIP curtains, red beacon
-    box(g, 1.0, 0.15, 0.04, 0, 0, 0.39, -2.55, chrome);
-    for (let i = 0; i < 7; i++) box(g, 0.02, 0.12, 0.05, 0x2a2d33, -0.42 + i * 0.14, 0.39, -2.56);
-    for (const sx of [-1, 1]) {
-      cyl(g, 0.11, 0.05, 0, sx * 0.72, 0.42, -2.52, 'z', new THREE.MeshBasicMaterial({ color: 0xfffbe6 }));
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.02, 6, 16), chrome); ring.position.set(sx * 0.72, 0.42, -2.55); g.add(ring);
-      box(g, 0.02, 0.035, 3.8, 0, sx * 1.08, 0.58, 0.05, chrome);
-      box(g, 0.02, 0.16, 0.62, 0xf4efe6, sx * 0.7, 1.0, 1.2);
-    }
-    box(g, 1.98, 0.07, 0.1, 0, 0, 0.27, -2.55, chrome); box(g, 1.98, 0.07, 0.1, 0, 0, 0.33, 2.62, chrome);
-    cyl(g, 0.12, 0.05, 0x111111, 0, 1.28, 0.3);
-    g.beacon = sph(g, 0.15, 0xff2020, 0, 1.37, 0.3, 1, 0.8, 1);
-    g.beacon.material = new THREE.MeshBasicMaterial({ color: 0xff2020 });
-  }
-  if (cfg.model === 'shaadi') { // baraat car: marigold strands over the canopy and along the sides, flowers on the nose, ribbon bow
-    const strand = (pts, n) => { for (let i = 0; i <= n; i++) { const t = i / n, p = pts(t); sph(g, 0.075, i % 3 === 0 ? 0xff5a1f : i % 2 ? 0xff8c00 : 0xffb300, p[0], p[1], p[2]); } };
-    for (const z of [-0.2, 0.7]) strand(t => [(t - 0.5) * 1.9, 0.95 + Math.sin(t * Math.PI) * 0.36, z], 16);
-    for (const sx of [-1, 1]) strand(t => [sx * 1.1, 0.62 - Math.sin(t * Math.PI * 3) * 0.06, -2.1 + t * 4.2], 22);
-    for (let i = 0; i < 9; i++) sph(g, 0.1, i % 2 ? 0xff3b6b : 0xffd23f, rand(-0.5, 0.5), 0.56, -2.15 + rand(-0.1, 0.15));
-    for (const sx of [-1, 1]) { const r = box(g, 0.5, 0.04, 0.22, 0xe8336f, sx * 0.22, 0.72, -1.05); r.rotation.y = sx * 0.6; }
-    sph(g, 0.09, 0xe8336f, 0, 0.73, -1.05);
+    for (let i = 0; i < 16; i++) fl.push([rand(-0.25, 0.25), 1.3 + rand(0, 0.14), 0.3 + rand(-0.25, 0.25), 0.1, ROSE[i % ROSE.length]]); // rose bouquet on the roof
+    strand(t => [(t - 0.5) * 1.9, 1.37, 1.95], 16);                                                                        // wing edge
+    for (const k of [-0.6, 0, 0.6]) strand(t => [k + (t - 0.5) * 0.5, 1.32 - Math.sin(t * Math.PI) * 0.38, 1.95], 7, 0.065);   // loops hanging off the wing
+    strand(t => [(t - 0.5) * 1.8, 0.98, 2.5], 14);                                                                         // above the tail lights
+    for (let i = 0; i < 22; i++) fl.push([rand(-0.8, 0.8), 0.55 + rand(0, 0.05), -2.2 + rand(-0.08, 0.2), 0.09, i % 2 ? ROSE[i % 4] : MARI[i % 3]]); // flower bed on the nose
+    const im = new THREE.InstancedMesh(SPH, new THREE.MeshLambertMaterial({ flatShading: true }), fl.length);
+    const m4 = new THREE.Matrix4(), col = new THREE.Color();
+    fl.forEach(([x, y, z, r, c], i) => { m4.makeScale(r, r, r).setPosition(x, y, z); im.setMatrixAt(i, m4); im.setColorAt(i, col.setHex(c)); });
+    g.add(im);
+    for (const sx of [-1, 1]) { const r = box(g, 0.5, 0.04, 0.22, 0xe8336f, sx * 0.22, hoodY(-1.05) + 0.02, -1.05); r.rotation.y = sx * 0.6; } // ribbon bow
+    sph(g, 0.09, 0xe8336f, 0, hoodY(-1.05) + 0.03, -1.05);
   }
   return g;
 }
@@ -418,7 +402,7 @@ function applyVehicle(cfg) {
   const room = old.parent || scene; room.remove(old); disposeObj(old); room.add(nm); carMesh = nm;
   for (const el of document.querySelectorAll('.vehLabel')) el.textContent = vehicleLabel();
 }
-function animateCarExtras(t) { if (carMesh.beacon) carMesh.beacon.material.color.setHex(Math.sin(t * 12) > 0 ? 0xff2424 : 0x4a0808); }
+function animateCarExtras(t) {}
 scene.add(carMesh);
 const carShadow = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 6), new THREE.MeshBasicMaterial({ map: SHADOW_TEX, transparent: true, depthWrite: false, ...DECAL }));
 carShadow.rotation.x = -Math.PI / 2; scene.add(carShadow);
@@ -987,8 +971,7 @@ const AU = {
   },
   playerHorn(model = 'roadster') {
     if (!this.ok()) return;
-    if (model === 'auto') return this.autoHorn(0, 0);
-    if (model === 'ambassador') return this.ambyHorn();
+    if (model === 'taxi') return this.taxiHorn();
     if (model === 'shaadi') return this.bandBaaja();
     // Roadster: a modern EV horn. Clean major-third dual tone that snaps into pitch, opens up, and lifts slightly at the tail.
     const ctx = this.ctx, t = this.now(), inp = this.spatial(0, 0, 0.12);
@@ -1001,7 +984,7 @@ const AU = {
       o.frequency.exponentialRampToValueAtTime(f, t + 0.035); o.frequency.exponentialRampToValueAtTime(f * 1.04, t + 0.38);
     }
   },
-  ambyHorn() { // classic dual-tone "paarp-paarp", the way an old Amby announces itself
+  taxiHorn() { // classic dual-tone "paarp-paarp" of an old Padmini taxi
     const ctx = this.ctx, t = this.now(), inp = this.spatial(0, 0, 0.1);
     const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1250; bp.Q.value = 0.8; bp.connect(inp);
     for (const [at, d] of [[0, 0.17], [0.27, 0.26]]) {
