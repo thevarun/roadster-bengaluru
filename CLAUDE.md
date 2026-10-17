@@ -8,9 +8,11 @@ A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layou
 - After editing `game.js` or `style.css`, bump the `?v=N` query on both links in `index.html`. Otherwise browsers and Pages serve stale copies.
 
 ## Files
-- `index.html`: HUD, overlays (title, pause, end screen), touch buttons, Three.js import map (pinned r160 from jsdelivr).
+- `index.html`: HUD, overlays (title, pause, showroom `#garage`, end screen, `#ogcard`), touch buttons, OG/Twitter meta, Three.js import map (pinned r160 from jsdelivr).
 - `style.css`: Tesla-minimal HUD (white, thin Inter type, glass panels) set against desi elements (Baloo 2, marigold, truck-art).
-- `game.js`: everything else, in commented sections: scene, Roadster mesh, traffic builders (`BUILDERS`), scenery, particles, audio (`AU`, all synthesised WebAudio), UI helpers, input, game state, spawning, `update()`, render sync, flow and main loop.
+- `game.js`: everything else, in commented sections: scene, sky, vehicle versions and the Roadster builder, traffic builders (`BUILDERS`), scenery, particles, audio (`AU`: CC0 horn samples plus WebAudio synth), UI helpers, input, game state, spawning, FSD, `update()`, render sync, showroom and pooja, flow and main loop.
+- `audio/`: five trimmed CC0 horn MP3s, credited in the README.
+- `_screenshots/`: the four current images the README uses. Don't commit dev-iteration screenshots here.
 
 ## Conventions
 - World: forward is **-Z**. `car.s` is distance travelled; the car's world z is `-car.s`. Obstacles store `x`, `z`, `w`, `d`, `h`, `vz` (forward speed). Collision is an AABB in x/z plus a height check (`car.y >= o.h` means you're above it).
@@ -35,7 +37,7 @@ A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layou
 - `window.__game` is a debug hook. `__game.sim(seconds, ctlFn)` fast-forwards the simulation at a fixed 60 Hz, independent of requestAnimationFrame (which throttles in hidden or automated tabs). Set `__game.keys.*` / `__game.pressed.*` inside `ctlFn` to drive input. It returns `{s, x, y, speed, air, clock, state, crashes, swag}`.
 - A good smoke test: start a game, teleport (`car.s = 880`), hop and hold to clear the Silk Board wall, and check `read_console_messages` for errors. For balance, run a simple avoid-and-hop bot through the full route in each drive mode and compare arrival times.
 - The window `blur` event auto-pauses the game, and automated browser tools can trigger it. Set `window.__noAutoPause = true` before taking screenshots.
-- Audio is synthesised and starts on the first user gesture. Remember the user can hear the browser pane, so don't leave a game running.
+- Audio starts on the first user gesture (browser autoplay rules), and the horn samples load after that. For silent checks, use `__game.AU.setMuted(true, false)`; the analyser `__game.AU.meter` taps the mix before the master mute, so levels can still be measured. Remember the user can hear the browser pane, so don't leave a game running.
 
 ## Share card and icons
 - `og.png` (1200×630) is a real render: `index.html?og` builds a parody of the Tesla launch-stage photo (dark stage, red floor light, Roadster mid-flip on a vapour trail over autos, a cow, a BMTC bus and a tanker) in `setupOgCard()`, with the wordmark from `#ogcard`. Regenerate it with the local server running:
@@ -43,5 +45,5 @@ A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layou
 - `favicon.svg` is the source icon. To make `apple-touch-icon.png` (180) and `favicon-32.png`, inline it as base64 in a `data:text/html` page, screenshot it at 600×600, and crop with `sips -c N N`. Headless Chrome won't go below its minimum window size.
 - OG and Twitter meta tags in `index.html` use absolute Pages URLs.
 
-## Git
-Conventional Commits, one line, no Co-Authored-By trailer.
+## Git and releases
+Conventional Commits, one line, no Co-Authored-By trailer. Releases are tagged (`v1.0.0` = first public release) with GitHub Release notes.

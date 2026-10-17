@@ -6,17 +6,7 @@ A small browser game: Tesla minimalism versus Bengaluru chaos. Hop over autos, h
 
 **▶ Play: https://thevarun.github.io/roadster-bengaluru/**
 
-![Silk Board](_screenshots/06-silk-board-v2.jpg)
-
-## Run locally
-
-No build step. It's static files, but ES modules need a local server:
-
-```bash
-python3 -m http.server 8742
-```
-
-Open http://localhost:8742.
+![Hovering over Silk Board, collecting an e-challan for flying without a licence](_screenshots/gameplay.jpg)
 
 ## Controls
 
@@ -28,22 +18,45 @@ Open http://localhost:8742.
 | W / ↑ | Rear thrusters (uses cold gas) |
 | S / ↓ | Brake |
 | H | Horn |
+| G | FSD (Supervised). Good luck. |
 | P / Esc | Pause |
 | M | Mute |
 
-Visit the showroom (bottom right of the title screen, or Change car from pause): the launch-event Roadster, the Mumbai kaali-peeli Roadster taxi, or the marigold-draped Shaadi Edition. Each has its own horn and handling, and delivery includes a lemon-and-coconut pooja.
+Phones get on-screen touch controls. Drive modes (Chill / Sport / Plaid) change cruise speed. The clock scales with the mode, so Chill isn't a handicap.
 
-Drive modes (Chill / Sport / Plaid) change cruise speed. The clock scales with the mode, so Chill isn't a handicap. Touch controls appear on phones.
+## The showroom
+
+Open it with **Enter the showroom** on the title screen, or **Change car** from the pause menu. Swap cars with ‹ › (or ← →), and press H to test the horn.
+
+| Car | Plays like | Horn |
+| --- | --- | --- |
+| Roadster | The launch-event car. Balanced. | Premium dual-tone |
+| Roadster Kaali-Peeli | A Mumbai taxi on ORR. Squeezes through gaps. | Old-taxi "paarp" |
+| Roadster Shaadi Edition | Buried in marigolds. Hovers less, parts traffic. | Band-baaja |
+
+Taking delivery of a new car includes a lemon-and-coconut pooja.
+
+![Showroom](_screenshots/showroom-shaadi.jpg)
 
 ## Route
 
 HSR Layout → Silk Board Junction → Outer Ring Road / Bellandur → Marathahalli Bridge → Whitefield.
 
+## Run locally
+
+No build step. It's static files, but ES modules need a local server:
+
+```bash
+python3 -m http.server 8742
+```
+
+Open http://localhost:8742. Pushing to `main` deploys to GitHub Pages.
+
 ## Tech
 
-- [Three.js](https://threejs.org) r160 from a CDN, low-poly flat-shaded geometry, all built in code
-- Horns are real recordings (below), and everything else is synthesised with WebAudio (moo, thrusters, band-baaja, temple bell). If a recording fails to load, the horns fall back to synth.
-- `game.js` holds everything: world, traffic AI, physics, HUD, audio.
+- [Three.js](https://threejs.org) r160 from a CDN, with low-poly, flat-shaded geometry built in code. There are no models or textures; signs are drawn on canvas.
+- Horns are real recordings (see Credits). Everything else is synthesised with WebAudio: moo, thrusters, band-baaja, temple bell. If a recording fails to load, that horn falls back to synth.
+- `game.js` holds the whole game: world, traffic AI, physics, showroom, HUD and audio. `CLAUDE.md` has notes for coding agents.
 
 ## Credits
 

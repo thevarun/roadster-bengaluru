@@ -314,7 +314,6 @@ function buildRoadster(cfg = carCfg) {
   const yel = new THREE.MeshStandardMaterial({ color: 0xf5c518, roughness: 0.4 });
   const glass = new THREE.MeshStandardMaterial({ color: 0x0a0c11, roughness: 0.08, metalness: 0.7 });
   const black = new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.55 });
-  const chrome = new THREE.MeshStandardMaterial({ color: 0xe9edf1, metalness: 0.25, roughness: 0.18 }); // reads as chrome without an env map
   const W = 1.98;
   // body: SR-71 / Esprit wedge — knife nose, hood rising in one line, long flat deck, cut-off tail
   const s = new THREE.Shape();
@@ -402,7 +401,6 @@ function applyVehicle(cfg) {
   const room = old.parent || scene; room.remove(old); disposeObj(old); room.add(nm); carMesh = nm;
   for (const el of document.querySelectorAll('.vehLabel')) el.textContent = vehicleLabel();
 }
-function animateCarExtras(t) {}
 scene.add(carMesh);
 const carShadow = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 6), new THREE.MeshBasicMaterial({ map: SHADOW_TEX, transparent: true, depthWrite: false, ...DECAL }));
 carShadow.rotation.x = -Math.PI / 2; scene.add(carShadow);
@@ -851,7 +849,6 @@ const SAMPLES = {
 };
 const HORNS = {
   car:  { f: [415, 494], type: 'sawtooth', bp: 1300, q: 1.2, dur: [0.14, 0.42], reps: [1, 3], gap: 0.09, vol: 0.10 },
-  auto: { f: [640], type: 'square', bp: 1700, q: 3, dur: [0.07, 0.13], reps: [2, 4], gap: 0.07, vol: 0.08 },
   bike: { f: [880, 1046], type: 'square', bp: 2200, q: 2.5, dur: [0.05, 0.09], reps: [2, 3], gap: 0.06, vol: 0.05 },
   bus:  { f: [196, 247, 294], type: 'sawtooth', bp: 900, q: 0.9, dur: [0.35, 0.7], reps: [1, 2], gap: 0.15, vol: 0.10 },
 };
@@ -1624,7 +1621,6 @@ function syncVisuals(dt) {
   car.pitch = lerp(car.pitch, pitchT, 1 - Math.exp(-dt * 6));
   carMesh.rotation.set(car.pitch, -car.vx * 0.012, car.tilt + (car.rolling ? car.rollDir * -car.roll * Math.PI * 2 : 0));
   for (const w of carMesh.wheels) w.children[0].rotation.x += car.speed * dt / 0.37;
-  animateCarExtras(game.t);
   const hover = car.thrust * (car.onGround ? 0 : 1);
   carMesh.glow.material.opacity = hover * 0.9; carMesh.glow.position.y = -car.y + 0.05 + 0.01; carMesh.glow.scale.setScalar(1 + car.y * 0.1);
 
@@ -1799,7 +1795,6 @@ function showroomFrame(dt) {
     camera.setViewOffset(w, h, 0, h * (portrait ? 0.1 : 0.07), w, h);   // nudge the car up, clear of the bottom panel
   }
   if (camera.fov !== (portrait ? 70 : 50)) { camera.fov = portrait ? 70 : 50; camera.updateProjectionMatrix(); }
-  animateCarExtras(showroom.t);
   AU.setEngine(0, 0);
 }
 // ---------- delivery pooja: break a coconut, roll over a lemon under each wheel, ring the bell
@@ -1921,7 +1916,6 @@ function frame(now) {
       const a = game.t * 0.25;
       carMesh.position.set(car.x, 0, 0); carMesh.rotation.set(0, 0, 0);
       carShadow.position.set(car.x, 0.02, 0); carContact.position.set(car.x, 0.025, 0); carContact.material.opacity = 1;
-      animateCarExtras(game.t);
       if (camera.fov !== 62) { camera.fov = 62; camera.updateProjectionMatrix(); }
       for (const m of [road, ...paths, ...curbs, earth]) m.position.z = -100;
       const portrait = camera.aspect < 1, r = 7.5 * (portrait ? 1.6 : 1);
