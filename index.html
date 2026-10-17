@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20">
+<link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
 <div id="app"></div>
@@ -116,9 +116,24 @@
       <button id="startBtn">START COMMUTE</button>
       <div class="modes"><div class="lbl">DRIVE MODE</div><div class="seg"><button data-mode="chill">Chill</button><button data-mode="sport">Sport</button><button data-mode="plaid">Plaid</button></div></div>
     </div>
+    <button id="vehBtn" class="vehbtn"><span class="vehLabel">Roadster · Pearl White</span> <span class="chg">Change ›</span></button>
     <div class="fine">Fly over cows. Never hit one. · <button class="linkbtn soundBtn">🔊 Sound: On</button></div>
     <div class="fine legal">Fan-made parody. Not affiliated with Tesla.</div>
   </div>
+</div>
+
+<div id="garage" class="hidden">
+  <div class="gpanel">
+    <div class="brand">SHOWROOM · INDIRANAGAR</div>
+    <div class="gmodels" id="gModels"></div>
+    <div id="gPrice" class="gprice"></div>
+    <p id="gDesc" class="gdesc"></p>
+    <div class="gstats" id="gStats"></div>
+    <div class="lbl">PAINT <span id="gPaintName" class="gpname"></span></div>
+    <div class="gpaint" id="gPaint"></div>
+    <button id="gDone" class="primary">DO THE POOJA · TAKE DELIVERY</button>
+  </div>
+  <div id="pooja" class="hidden"></div>
 </div>
 
 <div id="pause" class="overlay dim hidden">
@@ -147,6 +162,6 @@
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
-<script type="module" src="game.js?v=20"></script>
+<script type="module" src="game.js?v=24"></script>
 </body>
 </html>

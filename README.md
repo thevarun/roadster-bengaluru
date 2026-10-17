@@ -31,6 +31,8 @@ Open http://localhost:8742.
 | P / Esc | Pause |
 | M | Mute |
 
+Pick your Roadster in the showroom (the small link under Start): the launch-event Roadster, the one-seat Rocket, the auto-livery Namma Spec, or the marigold-draped Shaadi Edition with a band-baaja horn. Delivery includes a lemon-and-coconut pooja.
+
 Drive modes (Chill / Sport / Plaid) change cruise speed. The clock scales with the mode, so Chill isn't a handicap. Touch controls appear on phones.
 
 ## Route
