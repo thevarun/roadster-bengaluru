@@ -843,7 +843,7 @@ function updateParticles(dt) {
 // Real horn recordings (CC0, BigSoundBank — see README). Trim windows and gains come from measuring each file;
 // gains level-match them to ~-14 dB RMS. If a file fails to load, the synth voices below take over.
 const SAMPLES = {
-  roadster: { url: 'audio/roadster-horn.mp3', start: 0.02, dur: 0.62, gain: 1.25 },
+  roadster: { url: 'audio/roadster-horn.mp3', start: 0.08, dur: 0.86, gain: 0.5 },   // 4th honk of 'Klaxons inside car'
   taxi: { url: 'audio/taxi-horn.mp3', start: 0.03, dur: 1.24, gain: 0.9 },
   car: { url: 'audio/car-horn.mp3', start: 0.0, dur: 0.27, gain: 0.27 },
   bus: { url: 'audio/bus-horn.mp3', start: 0.04, dur: 0.72, gain: 0.66 },
@@ -1750,9 +1750,12 @@ function cycleModel(d) {
   const i = (MODEL_ORDER.indexOf(carCfg.model) + d + MODEL_ORDER.length) % MODEL_ORDER.length, k = MODEL_ORDER[i];
   applyVehicle({ model: k, paint: MODELS[k].paint || carCfg.paint }); showroom.pop = 0; renderGarage();
 }
+let sceneBeforeGarage = 'title';
 function setGarage(open, from) {
   if (open) garageFrom = from || (state === 'playing' ? 'pause' : 'title');
   garageOpen = open;
+  if (open) { sceneBeforeGarage = AU.scene; AU.setScene('showroom'); AU.setPaused(false); }   // horn test + pooja must be audible
+  else { AU.setScene(sceneBeforeGarage); if (garageFrom === 'pause') AU.setPaused(true); }
   (open ? showroomScene : scene).add(carMesh);   // the car moves into the showroom room and back
   $('garage').classList.toggle('hidden', !open); $('garage').classList.remove('away');
   if (garageFrom === 'title') $('title').classList.toggle('hidden', open);
