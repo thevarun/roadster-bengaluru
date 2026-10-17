@@ -96,7 +96,7 @@ function sph(parent, r, color, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1) {
 }
 
 const texCache = new Map();
-function textTex(text, { bg = '#ffd23f', fg = '#1b1b1b', w = 512, h = 128, font = '800 64px "Baloo 2", sans-serif', sub = null, subFont = '700 30px "Noto Sans Kannada", sans-serif', border = null } = {}) {
+function textTex(text, { bg = '#ffd23f', fg = '#1b1b1b', w = 512, h = 128, font = '800 64px "Baloo 2", sans-serif', sub = null, subFont = '700 30px "Baloo 2", sans-serif', border = null } = {}) {
   const key = [text, bg, fg, w, h, font, sub].join('|');
   if (texCache.has(key)) return texCache.get(key);
   const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
@@ -198,16 +198,7 @@ function skylineTexture() {
     }
   };
   towers('#bdbab1', 30, 110, 10);                                                          // far haze layer
-  // tower cranes — the true skyline of Bengaluru
-  g.strokeStyle = '#a19f98'; g.fillStyle = '#a19f98'; g.lineWidth = 3;
-  for (let i = 0; i < 9; i++) {
-    const x = rand(40, W - 40), top = rand(40, 90), jib = rand(70, 140), dir = pick([-1, 1]);
-    g.fillRect(x - 2, top, 4, H - top);
-    g.beginPath(); g.moveTo(x - dir * 30, top); g.lineTo(x + dir * jib, top); g.stroke();
-    g.fillRect(x - dir * 34 - 6, top, 12, 10);                                             // counterweight
-    g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, top - 14); g.lineTo(x + dir * jib * 0.8, top); g.moveTo(x, top - 14); g.lineTo(x - dir * 30, top); g.stroke();
-    g.beginPath(); g.moveTo(x + dir * jib * 0.6, top); g.lineTo(x + dir * jib * 0.6, top + rand(30, 70)); g.stroke(); g.lineWidth = 3;
-  }
+  g.fillStyle = '#a19f98';
   // gopurams
   for (let i = 0; i < 2; i++) {
     const x = rand(200, W - 200), base = 70, tiers = 6;
@@ -341,8 +332,6 @@ carContact.rotation.x = -Math.PI / 2; scene.add(carContact);
 //  Traffic & hazards
 // ---------------------------------------------------------------------
 const AUTO_SLOGANS = ['Appa Amma\nBlessings', 'Sound Horn', 'Don\'t Kiss Me', 'Mother\'s Gift', 'Ex-Girlfriend\'s\nGift', 'Meter Ahead\n(Not Working)', 'Only Duty', 'Jai Karnataka', 'Life is\nRace'];
-const PLATES = ['KA 01 MG 4521', 'KA 03 HB 9087', 'KA 05 EZ 1234', 'KA 51 N 7777', 'KA 04 MK 2019', 'KA 53 Z 0420'];
-const CAB_PLATES = ['KA 01 C 6969', 'KA 05 C 3141', 'KA 03 C 8008', 'KA 51 C 1000'];
 const CAR_COLORS = [0xffffff, 0xc0c4c8, 0x9e1b1b, 0x274b8a, 0x2e2e2e, 0xd9d2c0, 0x6b2f86];
 
 function shadowUnder(g, w, d) {
@@ -362,7 +351,7 @@ const BUILDERS = {
     box(g, 1.2, 0.08, 1.7, 0xf5c518, 0, 1.88, 0.2);
     box(g, 0.9, 0.5, 0.05, 0x9fd8ef, 0, 1.3, -0.75);            // windscreen
     sph(g, 0.17, 0x6b4428, 0.2, 1.42, -0.35);                   // auto anna
-    const back = signPlane(g, textTex(pick(AUTO_SLOGANS), { bg: '#f5c518', font: '800 54px "Baloo 2", sans-serif' }), 1.2, 0.42, 0, 1.0, 1.26);
+    if (Math.random() < 0.2) signPlane(g, textTex(pick(AUTO_SLOGANS), { bg: '#f5c518', font: '800 54px "Baloo 2", sans-serif' }), 1.2, 0.42, 0, 1.0, 1.26);
     cyl(g, 0.26, 0.2, 0x151515, 0, 0.26, -1.0, 'x'); cyl(g, 0.26, 0.2, 0x151515, -0.58, 0.26, 0.8, 'x'); cyl(g, 0.26, 0.2, 0x151515, 0.58, 0.26, 0.8, 'x');
     shadowUnder(g, 1.3, 2.5);
     return { mesh: g, w: 1.35, d: 2.6, h: 1.95, vz: rand(9, 16), kind: 'auto', roof: true, ai: { t: rand(0.5, 2), tx: 0 } };
@@ -375,8 +364,7 @@ const BUILDERS = {
     box(g, 2.6, 0.75, 9.6, 0x1b2430, 0, 2.25, -0.1);             // windows
     box(g, 2.56, 0.18, 10, vajra ? 0xffffff : 0xe8dcc0, 0, 1.45, 0);
     box(g, 2.5, 0.25, 9.8, 0xdadada, 0, 3.05, 0);
-    signPlane(g, textTex(pick(['500D  HEBBAL', '335E  KADUGODI', 'G-4  WHITEFIELD', '201  SRINAGAR', 'KIA-8  AIRPORT']), { bg: '#111', fg: '#ff9a1c', font: '700 60px Inter, sans-serif' }), 2.0, 0.42, 0, 2.75, 5.02);
-    signPlane(g, textTex('BMTC', { bg: vajra ? '#1f5fb0' : '#b5332e', fg: '#fff', font: '800 70px Inter, sans-serif' }), 1.2, 0.4, 0, 1.2, 5.02);
+    box(g, 2.0, 0.32, 0.04, 0, 0, 2.75, 5.02, new THREE.MeshBasicMaterial({ color: 0xc2701a })); // route LED board
     wheels(g, 2.4, -3.2, 3.2, 0.5);
     // passengers hanging out of the door, as is tradition
     for (let i = 0; i < 3; i++) { const p = new THREE.Group(); p.position.set(1.42 + i * 0.1, 0.9, -3.6 + i * 0.45); g.add(p); box(p, 0.3, 0.9, 0.25, pick([0x2d6cdf, 0xd9483b, 0xeeeeee, 0x3c9b4f]), 0, 0.5, 0); sph(p, 0.15, 0x6b4428, 0, 1.08, 0); p.rotation.z = -0.25 - i * 0.1; }
@@ -407,8 +395,7 @@ const BUILDERS = {
     box(g, Wd - 0.15, 0.58, L * 0.55, col, 0, 1.22, big ? 0.2 : 0.1);
     box(g, Wd - 0.1, 0.42, L * 0.5, 0x1b2430, 0, 1.24, big ? 0.2 : 0.1);
     box(g, Wd + 0.02, 0.1, 0.05, 0xd41c1c, 0, 0.82, L / 2 + 0.01);
-    signPlane(g, textTex(cab ? pick(CAB_PLATES) : pick(PLATES), { bg: cab ? '#f5d000' : '#fff', fg: '#111', font: '700 56px Inter, sans-serif', w: 512, h: 112 }), 0.62, 0.15, 0, 0.6, L / 2 + 0.02);
-    if (cab && Math.random() < .6) signPlane(g, textTex('ON DUTY', { bg: '#111', fg: '#ff3', font: '800 60px Inter' }), 0.7, 0.18, 0, 1.6, L * 0.1);
+    box(g, 0.6, 0.15, 0.02, cab ? 0xf5d000 : 0xf2f2f2, 0, 0.6, L / 2 + 0.02); // number plate
     wheels(g, Wd, -L * 0.32, L * 0.32);
     shadowUnder(g, Wd, L);
     return { mesh: g, w: Wd, d: L, h: big ? 1.6 : 1.5, vz: rand(11, 20), kind: 'car', roof: true, ai: { t: rand(2, 5), tx: 0 } };
@@ -437,7 +424,6 @@ const BUILDERS = {
     box(g, 2.4, 0.35, 7, 0x2a2a2a, 0, 0.8, 0);
     const tank = cyl(g, 1.15, 5, 0x2f6fd6, 0, 2.05, 1.0, 'z');
     signPlane(g, textTex('HORN OK\nPLEASE', { bg: '#ffd400', fg: '#d0131b', font: '800 70px "Baloo 2", sans-serif', w: 512, h: 256, border: '#1b8f3a' }), 1.9, 0.95, 0, 1.95, 3.52);
-    signPlane(g, textTex('DRINKING WATER ₹1800', { bg: '#2f6fd6', fg: '#fff', font: '800 52px Inter' }), 2.2, 0.32, 1.17, 2.0, 1.0, Math.PI / 2);
     wheels(g, 2.3, -2.6, 2.4, 0.5);
     shadowUnder(g, 2.4, 7.4);
     return { mesh: g, w: 2.4, d: 7.4, h: 3.2, vz: rand(8, 13), kind: 'tanker', roof: true, ai: { t: 99, tx: 0 } };
@@ -468,7 +454,6 @@ const BUILDERS = {
     const m = new THREE.MeshLambertMaterial({ map: stripeTex('#ff6a00', '#ffffff', 6) });
     box(g, 3.6, 0.9, 0.3, 0, 0, 0.75, 0, m);
     for (const sx of [-1.5, 1.5]) box(g, 0.12, 0.4, 0.5, 0x333333, sx, 0.2, 0);
-    signPlane(g, textTex('METRO WORK IN PROGRESS', { bg: '#ffd400', fg: '#111', font: '800 46px Inter' }), 2.6, 0.35, 0, 1.4, 0.16);
     return { mesh: g, w: 3.6, d: 0.6, h: 1.2, vz: 0, kind: 'barricade' };
   },
   pillar() {
@@ -476,7 +461,7 @@ const BUILDERS = {
     cyl(g, 1.0, 10, 0xa9a9a4, 0, 5, 0);
     box(g, 4.2, 1.2, 2.4, 0xa9a9a4, 0, 10.4, 0);
     box(g, 3.4, 1.4, 34, 0x9c9c97, 0, 11.6, 0); // viaduct span
-    signPlane(g, textTex('NAMMA METRO\nOpening 2019 2023 2025 Soon', { bg: '#7b2d8e', fg: '#fff', font: '800 44px Inter', w: 512, h: 160 }), 3, 0.95, 0, 3.2, 1.02);
+    if (Math.random() < 0.3) signPlane(g, textTex('NAMMA METRO\nOpening 2019 2023 2025 Soon', { bg: '#7b2d8e', fg: '#fff', font: '800 44px Inter', w: 512, h: 160 }), 3, 0.95, 0, 3.2, 1.02);
     shadowUnder(g, 2, 2);
     return { mesh: g, w: 2.0, d: 2.0, h: 99, vz: 0, kind: 'pillar' };
   },
@@ -518,11 +503,11 @@ function clearObstacles() { for (const o of obstacles) { scene.remove(o.mesh); d
 //  Scenery: buildings, signboards, trees, poles with tangled wires
 // ---------------------------------------------------------------------
 const SHOPS = [
-  ['Sri Lakshmi Darshini', 'ದರ್ಶಿನಿ'], ['Udupi Grand Hotel', 'ಹೋಟೆಲ್'], ['Filter Kaapi ₹15', 'ಕಾಫಿ'], ['Raghavendra Stores', null],
+  ['Sri Lakshmi Darshini', null], ['Udupi Grand Hotel', null], ['Filter Kaapi ₹15', null], ['Raghavendra Stores', null],
   ['Iyengar\'s Bakery', null], ['Mobile Recharge & Xerox', null], ['Manjunatha Hardware', null], ['Biryani Since 1987', null],
-  ['PG for Gents · WiFi · Food', null], ['Co-Working: Hot Desks (Literally)', null], ['Tasty Thindi', 'ನಮ್ಮ ಬೆಂಗಳೂರು'],
-  ['Ganesh Condiments', null], ['Ayurvedic Hair Oil · 100% Natural', null], ['Hosur Road Tyres', null], ['Brahmin\'s Coffee Bar', 'ಕಾಫಿ'],
-  ['Silk Sarees Mega Sale', null], ['Dosa Camp', 'ಸ್ವಾಗತ'], ['Startup Café · Pitch Decks Free', null],
+  ['PG for Gents · WiFi · Food', null], ['Co-Working: Hot Desks (Literally)', null], ['Tasty Thindi', null],
+  ['Ganesh Condiments', null], ['Ayurvedic Hair Oil · 100% Natural', null], ['Hosur Road Tyres', null], ['Brahmin\'s Coffee Bar', null],
+  ['Silk Sarees Mega Sale', null], ['Dosa Camp', null], ['Startup Café · Pitch Decks Free', null],
 ];
 const BILLBOARDS = [
   'Bengaluru: Come for the weather.\nStay because you\'re stuck in traffic.',
@@ -581,7 +566,7 @@ function roofStuff(g, cx, top, d, side) {
 function shopSign(g, side, d) {
   const [name, kn] = pick(SHOPS);
   const bg = pick(SIGN_BG); const fg = bg === '#fff' || bg === '#ffd23f' ? '#c0161c' : '#fff';
-  signPlane(g, textTex(name, { bg, fg, sub: kn, font: '800 56px "Baloo 2", sans-serif' }), d * 0.85, 1.5, side * (PATH_OUT + 0.94), 3.2, 0, -side * Math.PI / 2);
+  if (Math.random() < 0.35) signPlane(g, textTex(name, { bg, fg, sub: kn, font: '800 56px "Baloo 2", sans-serif' }), d * 0.85, 1.5, side * (PATH_OUT + 0.94), 3.2, 0, -side * Math.PI / 2);
   box(g, 0.06, 2.4, d * 0.6, 0x8b8b8b, side * (PATH_OUT + 0.95), 1.2, 0); // shutter
 }
 
@@ -608,7 +593,6 @@ function bldShop(side) {
   }
   return { obj: g, len: d + rand(0.3, 2.5) };
 }
-const TECH_NAMES = ['SYNERGY TECH PARK', 'CLOUDNINE SOLUTIONS', 'PIVOT LABS', 'UNICORN TOWERS', 'AI-FIRST SYSTEMS', 'BLOCKCHAIN 4 BHARAT', 'DISRUPT HQ', 'SCALEUP SQUARE'];
 function bldGlass(side) {
   const g = new THREE.Group();
   const w = rand(10, 15), h = rand(16, 28), d = rand(14, 22), set = 4;
@@ -617,8 +601,6 @@ function bldGlass(side) {
   box(g, w, h, d, 0x7da6bd, cx, h / 2, 0, new THREE.MeshLambertMaterial({ color: 0x86afc6, emissive: 0x1a2a36 }));
   for (let y = 3; y < h; y += 3) box(g, 0.1, 0.18, d + 0.02, 0xe6eef2, fx + out * 0.05, y, 0);  // mullions
   for (let z = -d / 2 + 2; z < d / 2; z += 3) box(g, 0.1, h, 0.12, 0xd0dde4, fx + out * 0.05, h / 2, z);
-  signPlane(g, textTex(pick(TECH_NAMES), { bg: '#0d1b2a', fg: '#ffffff', font: '600 58px Inter, sans-serif' }), d * 0.75, 1.6, fx + out * 0.12, h - 1.4, 0, -side * Math.PI / 2);
-  if (Math.random() < 0.6) signPlane(g, textTex('NOW\nHIRING\n10x\nDEVS', { bg: '#e82127', fg: '#fff', font: '800 70px Inter', w: 256, h: 512 }), 1.6, 3.2, fx + out * 0.12, h * 0.55, d / 2 - 2, -side * Math.PI / 2);
   box(g, 0.3, 2.6, 4, 0x1b2430, fx + out * 0.1, 1.3, 0);                                     // lobby doors
   return { obj: g, len: d + rand(1, 4) };
 }
@@ -636,7 +618,7 @@ function bldConstruction(side) {
   const net = new THREE.Mesh(new THREE.PlaneGeometry(d * 0.9, fh * 2), new THREE.MeshLambertMaterial({ color: 0x2e8b57, transparent: true, opacity: 0.55, side: THREE.DoubleSide }));
   net.position.set(fx - side * 0.05, (n - 1) * fh + 0.3, 0); net.rotation.y = -side * Math.PI / 2; g.add(net);
   // hoarding along the footpath
-  signPlane(g, textTex(pick(['Sri Krishna Builders\n2BHK from ₹1.2 Cr · Possession 2031*', 'Prestige-ish Heights\nLuxury 3BHK · Lake View (Foam)', 'Coming Soon: Mall\nComing Soon: Since 2017']), { bg: '#2f6fd6', fg: '#fff', font: '700 40px Inter', w: 1024, h: 192 }), d * 0.95, 1.9, side * (PATH_OUT + 0.95), 1.15, 0, -side * Math.PI / 2);
+  box(g, 0.08, 2.2, d * 0.95, 0x2f6fd6, side * (PATH_OUT + 0.95), 1.1, 0); // tin-sheet hoarding
   if (Math.random() < 0.5) { // tower crane
     const mh = n * fh + rand(10, 16), mx = cx + side * (w / 2 + 1), dir = pick([-1, 1]);
     box(g, 0.7, mh, 0.7, 0xf2c12e, mx, mh / 2, 0);
@@ -660,7 +642,6 @@ function bldTemple(side) {
   cyl(g, 0.05, 5, 0x6b4a2e, fx + side * 5.5, 5.7, 1.8);
   const flag = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -0.9, 0), new THREE.Vector3(0, -0.45, 1.3)]), new THREE.MeshBasicMaterial({ color: 0xff8c1a, side: THREE.DoubleSide }));
   flag.position.set(fx + side * 5.5, 8.1, 1.8); g.add(flag);
-  signPlane(g, textTex('Sri Ganesha Temple', { bg: '#ff8c1a', fg: '#5a1000', sub: 'ದೇವಸ್ಥಾನ', font: '800 56px "Baloo 2", sans-serif' }), 3.6, 0.9, fx - side * 0.02, 2.0, 0, -side * Math.PI / 2);
   return { obj: g, len: d + 1 };
 }
 function bldApartment(side) {
@@ -676,8 +657,6 @@ function bldApartment(side) {
     box(g, 0.05, 0.85, d * 0.8, 0xeeeeee, fx + out * 1.08, y + 0.48, 0);
     if (Math.random() < 0.4) laundry(g, fx + out * 0.85, y + 1.95, rand(-d / 4, d / 4), d * 0.35);
   }
-  signPlane(g, textTex(pick(['Sri Sai Residency', 'Lakshmi Nilaya', 'Green Glen Apartments', 'Brindavan Enclave']), { bg: '#f4efe6', fg: '#7a1f1f', font: '800 52px "Baloo 2", sans-serif' }), 3.6, 0.7, side * (PATH_OUT + 0.9), 1.9, 0, -side * Math.PI / 2);
-  if (Math.random() < 0.7) signPlane(g, textTex('TO-LET\n2BHK · Vegetarians only\nBachelors NOT allowed', { bg: '#fff', fg: '#c0161c', font: '800 46px Inter', w: 512, h: 256 }), 1.9, 0.95, fx + out * 1.12, 3.7 + rand(1, floors - 1) * 3 + 0.4, rand(-d / 4, d / 4), -side * Math.PI / 2);
   roofStuff(g, cx, h, d, side);
   return { obj: g, len: d + set + rand(0.5, 2) };
 }
@@ -741,7 +720,7 @@ function updateScenery(carS) {
     const side = i ? 1 : -1;
     while (sceneryNextS[i] < carS + 260) {
       const r = Math.random();
-      const it = r < 0.72 ? buildBuilding(side, sceneryNextS[i]) : r < 0.92 ? buildTree(side) : buildBillboard(side);
+      const it = r < 0.74 ? buildBuilding(side, sceneryNextS[i]) : r < 0.96 ? buildTree(side) : buildBillboard(side);
       it.s = sceneryNextS[i] + it.len / 2; it.obj.position.z = -it.s; scene.add(it.obj); scenery.push(it);
       sceneryNextS[i] += it.len;
     }
@@ -776,18 +755,9 @@ function updateParticles(dt) {
 
 // ---------------------------------------------------------------------
 //  Audio — all synthesized, zero assets
-//  buses: sfx + music -> compressor -> master. Shared street reverb.
+//  sfx bus (incl. street reverb) -> compressor -> master. One mute switch (master).
 //  Horns are spatial (pan + distance lowpass) and type-specific.
-//  Music: generative lo-fi raga groove (tanpura, tabla keherwa, bansuri, synth pad) in D.
 // ---------------------------------------------------------------------
-const PENTA = [293.66, 329.63, 369.99, 440, 493.88, 587.33, 659.25]; // D major pentatonic (Mohanam), D4–E5
-const CHORDS = [
-  [146.83, 185.0, 220.0, 329.63],   // Dmaj9
-  [123.47, 146.83, 185.0, 220.0],   // Bm7
-  [98.0, 146.83, 185.0, 246.94],    // Gmaj7
-  [110.0, 146.83, 164.81, 220.0],   // Asus
-];
-const KEHERWA = ['dha', 'ge', 'na', 'ti', 'na', 'ka', 'dhi', 'na'];
 const HORNS = {
   car:  { f: [415, 494], type: 'sawtooth', bp: 1300, q: 1.2, dur: [0.14, 0.42], reps: [1, 3], gap: 0.09, vol: 0.10 },
   auto: { f: [640], type: 'square', bp: 1700, q: 3, dur: [0.07, 0.13], reps: [2, 4], gap: 0.07, vol: 0.08 },
@@ -796,25 +766,21 @@ const HORNS = {
 };
 
 const AU = {
-  ctx: null, muted: false, musicOn: true, sfxOn: true, scene: 'title', paused: false, intensity: 0,
+  ctx: null, muted: false, scene: 'title', paused: false,
   init() {
     if (this.ctx) return;
     const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
     const ctx = this.ctx = new C();
-    try { this.musicOn = localStorage.getItem('rb-music') !== '0'; this.sfxOn = localStorage.getItem('rb-sfx') !== '0'; } catch (e) {}
     this.master = ctx.createGain(); this.master.gain.value = this.muted ? 0 : 0.9; this.master.connect(ctx.destination);
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.25;
     comp.connect(this.master);
     // analyser tap for level checks (debug)
     this.meter = ctx.createAnalyser(); this.meter.fftSize = 2048; comp.connect(this.meter);
-    this.sfx = ctx.createGain(); this.sfx.gain.value = this.sfxOn ? 1 : 0; this.sfx.connect(comp);
-    this.mus = ctx.createGain(); this.mus.gain.value = this.musicOn ? 0.42 : 0;
-    this.musF = ctx.createBiquadFilter(); this.musF.type = 'lowpass'; this.musF.frequency.value = 16000;
-    this.mus.connect(this.musF); this.musF.connect(comp);
+    this.sfx = ctx.createGain(); this.sfx.gain.value = 1; this.sfx.connect(comp);
+    // reverb returns into the sfx bus, so pausing/muting silences the tails too
     this.verb = ctx.createConvolver(); this.verb.buffer = this.impulse(2.2, 2.8);
-    const vg = ctx.createGain(); vg.gain.value = 0.55; this.verb.connect(vg); vg.connect(comp);
-    const mv = ctx.createGain(); mv.gain.value = 0.35; this.musF.connect(mv); mv.connect(this.verb);
+    const vg = ctx.createGain(); vg.gain.value = 0.55; this.verb.connect(vg); vg.connect(this.sfx);
     this.white = this.noiseBuf(false); this.brown = this.noiseBuf(true);
     // continuous beds
     this.ambG = this.bed(this.brown, 'lowpass', 320, 0.6);              // far-off traffic rumble
@@ -827,9 +793,6 @@ const AU = {
     this.motor2 = ctx.createOscillator(); this.motor2.type = 'triangle'; this.motor2.connect(m2g); this.motor2.start();
     this.whineG = ctx.createGain(); this.whineG.gain.value = 0; this.whineG.connect(this.sfx);
     this.whine = ctx.createOscillator(); this.whine.type = 'sine'; this.whine.connect(this.whineG); this.whine.start();
-    // music clock
-    this.bpm = 92; this.mStep = 0; this.mNext = ctx.currentTime + 0.2; this.melIdx = 3;
-    setInterval(() => this.musicTick(), 40);
   },
   // ---------- plumbing
   noiseBuf(brown) {
@@ -881,12 +844,12 @@ const AU = {
   setPaused(p) {
     this.paused = p; if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    this.sfx.gain.setTargetAtTime(p || !this.sfxOn ? 0 : 1, t, 0.05);
-    this.musF.frequency.setTargetAtTime(p ? 650 : 16000, t, 0.15);   // muffled, like music from the chai stall radio
+    this.sfx.gain.setTargetAtTime(p ? 0 : 1, t, 0.05);
   },
-  setMuted(m) { this.muted = m; if (this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.9, this.ctx.currentTime, 0.03); },
-  setMusic(on) { this.musicOn = on; try { localStorage.setItem('rb-music', on ? '1' : '0'); } catch (e) {} if (this.mus) this.mus.gain.setTargetAtTime(on ? 0.42 : 0, this.ctx.currentTime, 0.1); },
-  setSfx(on) { this.sfxOn = on; try { localStorage.setItem('rb-sfx', on ? '1' : '0'); } catch (e) {} if (this.sfx) this.sfx.gain.setTargetAtTime(on && !this.paused ? 1 : 0, this.ctx.currentTime, 0.05); },
+  setMuted(m, persist = true) {
+    this.muted = m; if (persist) try { localStorage.setItem('rb-muted', m ? '1' : '0'); } catch (e) {}
+    if (this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.9, this.ctx.currentTime, 0.03);
+  },
   setEngine(speed, thrust) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime, on = this.scene === 'play' && !this.paused, k = speed / 70;
@@ -995,76 +958,8 @@ const AU = {
       this.osc('square', 1568, t0, 0.09, g);
     }
   },
-
-  // ---------- music
-  musicTick() {
-    if (!this.ok() || !this.musicOn) { if (this.ctx) this.mNext = this.ctx.currentTime + 0.1; return; }
-    const ctx = this.ctx;
-    if (this.mNext < ctx.currentTime) this.mNext = ctx.currentTime + 0.05;
-    const stepDur = 60 / this.bpm / 2; // eighth notes
-    while (this.mNext < ctx.currentTime + 0.25) { this.musicStep(this.mStep, this.mNext, stepDur); this.mNext += stepDur; this.mStep++; }
-  },
-  musicStep(i, t, sd) {
-    const pos = i % 8, bar = Math.floor(i / 8);
-    if (i % 16 === 0) this.pad(CHORDS[(i / 16 | 0) % 4], t, sd * 16);
-    if (i % 4 === 0) this.tanpura([110, 146.83, 146.83, 73.42][(i / 4) % 4], t);
-    const play = this.scene === 'play' && !this.paused;
-    if (play) {
-      const hum = rand(0, 0.008), acc = pos === 0 ? 1.15 : rand(0.85, 1.0);
-      this.bol(KEHERWA[pos], t + hum, acc);
-      if (this.intensity > 0 && pos === 7) { this.bol('ti', t + sd / 2, 0.7); }               // fills when it's tense
-      if (this.intensity > 0 && pos === 3 && Math.random() < 0.5) this.bol('ka', t + sd / 2, 0.8);
-    }
-    // bansuri phrase: call-and-response, two bars on, two bars off
-    if (bar % 4 >= 2 && pos % 2 === 0 && Math.random() < (play ? 0.6 : 0.4)) {
-      this.melIdx = clamp(this.melIdx + pick([-2, -1, -1, 1, 1, 2]), 0, PENTA.length - 1);
-      this.bansuri(PENTA[this.melIdx], t, sd * pick([1, 2, 2, 3]));
-    }
-  },
-  pad(freqs, t, dur) {
-    const ctx = this.ctx, lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 850; lp.Q.value = 0.4; lp.connect(this.mus);
-    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.022, t + 1.2);
-    g.gain.setValueAtTime(0.022, t + dur - 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.6); g.connect(lp);
-    for (const f of freqs) for (const det of [-7, 7]) { const o = this.osc('sawtooth', f, t, dur + 0.7, g); o.detune.value = det; }
-  },
-  tanpura(f, t) {
-    const ctx = this.ctx, bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.5;
-    bp.frequency.setValueAtTime(2400, t); bp.frequency.exponentialRampToValueAtTime(700, t + 2.2); // jawari shimmer
-    const g = ctx.createGain(); this.env(g, t, 0.01, 0.06, 0.05, 2.6);
-    bp.connect(g); g.connect(this.mus);
-    this.osc('sawtooth', f, t, 2.8, bp); this.osc('sawtooth', f * 1.002, t, 2.8, bp);
-  },
-  bol(b, t, acc = 1) {
-    const ctx = this.ctx, out = this.mus;
-    const bayan = (slide) => {
-      const g = ctx.createGain(); this.env(g, t, 0.003, 0.26 * acc, 0.02, slide ? 0.45 : 0.32); g.connect(out);
-      const o = this.osc('sine', slide ? 68 : 88, t, 0.55, g);
-      o.frequency.exponentialRampToValueAtTime(slide ? 108 : 58, t + (slide ? 0.22 : 0.28));
-    };
-    const dayan = (decay, v = 0.13) => {
-      const g = ctx.createGain(); this.env(g, t, 0.002, v * acc, 0.005, decay); g.connect(out);
-      const f = 293.66;
-      this.osc('sine', f, t, decay + 0.1, g);
-      const h = ctx.createGain(); h.gain.value = 0.45; h.connect(g); this.osc('sine', f * 2.0, t, decay + 0.1, h);
-      const h3 = ctx.createGain(); h3.gain.value = 0.2; h3.connect(g); this.osc('sine', f * 3.01, t, decay, h3);
-      this.noise(t, 0.012, 'highpass', 3500, 0.7, 0.05 * acc, out);
-    };
-    if (b === 'dha') { bayan(false); dayan(0.3); }
-    else if (b === 'ge') bayan(true);
-    else if (b === 'na') dayan(0.26);
-    else if (b === 'ti') dayan(0.06, 0.09);
-    else if (b === 'ka') this.noise(t, 0.05, 'lowpass', 400, 0.8, 0.22 * acc, out, this.brown);
-    else if (b === 'dhi') { bayan(false); dayan(0.14, 0.1); }
-  },
-  bansuri(f, t, dur) {
-    const ctx = this.ctx, g = ctx.createGain(); this.env(g, t, 0.06, 0.05, Math.max(0.05, dur - 0.1), 0.22); g.connect(this.mus);
-    const o = this.osc('sine', f * 0.97, t, dur + 0.3, g); o.frequency.exponentialRampToValueAtTime(f, t + 0.07); // meend into the note
-    const lfo = ctx.createOscillator(); lfo.frequency.value = 5.3; const lg = ctx.createGain();
-    lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(f * 0.007, t + 0.25); lfo.connect(lg); lg.connect(o.frequency); lfo.start(t); lfo.stop(t + dur + 0.3);
-    const br = this.noise(t, dur + 0.1, 'bandpass', f, 9, 0.012, g); // breath
-  },
 };
-try { AU.musicOn = localStorage.getItem('rb-music') !== '0'; AU.sfxOn = localStorage.getItem('rb-sfx') !== '0'; } catch (e) {}
+try { AU.muted = localStorage.getItem('rb-muted') === '1'; } catch (e) {}
 let audioUnlocked = false;
 function unlockAudio() {
   if (audioUnlocked) return; audioUnlocked = true;
@@ -1073,8 +968,7 @@ function unlockAudio() {
 }
 addEventListener('pointerdown', unlockAudio); addEventListener('keydown', unlockAudio);
 function syncAudioButtons() {
-  for (const el of document.querySelectorAll('.musicBtn')) { el.textContent = '♫ Music: ' + (AU.musicOn ? 'On' : 'Off'); el.classList.toggle('off', !AU.musicOn); }
-  for (const el of document.querySelectorAll('.sfxBtn')) { el.textContent = '🔊 SFX: ' + (AU.sfxOn ? 'On' : 'Off'); el.classList.toggle('off', !AU.sfxOn); }
+  for (const el of document.querySelectorAll('.soundBtn')) { el.textContent = AU.muted ? '🔇 Sound: Off' : '🔊 Sound: On'; el.classList.toggle('off', AU.muted); }
 }
 const HORN_OF = { auto: 'auto', bike: 'bike', bus: 'bus', car: 'car' };
 const hornKind = (o) => o.kind === 'tanker' ? (Math.random() < 0.5 ? 'truck' : 'bus') : HORN_OF[o.kind] || 'car';
@@ -1421,7 +1315,6 @@ function update(dt) {
   // ---------- ambient Bangalore soundscape
   game.ambT -= dt;
   if (game.ambT <= 0) ambientHonks();
-  AU.intensity = st === 1 || game.clock > STANDUP_MIN - 6 ? 1 : 0;
 
   // ---------- foam overlay
   game.foamT -= dt; ui.foam.classList.toggle('on', game.foamT > 0);
@@ -1622,18 +1515,6 @@ function updateHUD(dt) {
 // ---------------------------------------------------------------------
 //  Flow
 // ---------------------------------------------------------------------
-// Google-Maps-style route card: traffic-coloured line, stops, you-are-here
-const ROUTE_STOPS = [
-  { s: 0, name: 'HSR Layout', note: 'optimism' },
-  { s: 700, name: 'Silk Board', note: '⚠ gridlock' },
-  { s: 1200, name: 'Bellandur', note: 'metro work' },
-  { s: 2050, name: 'Marathahalli', note: 'craters' },
-  { s: TOTAL, name: 'Whitefield', note: '🏁 Gate 3' },
-];
-function renderRoute(el, frac, eta) {
-  el.innerHTML = `<div class="rhead"><span>Navigating to <b>Tech Park · Gate 3</b></span><span class="reta">${eta || 'Maps says <em>47 min</em> · You have 38'}</span></div>
-  <div class="rline"><div class="rdone" style="width:${frac * 100}%"></div>${ROUTE_STOPS.map((st, i) => `<div class="stop${i % 2 ? ' up' : ''}${i === 0 ? ' first' : i === ROUTE_STOPS.length - 1 ? ' last' : ''}" style="left:${st.s / TOTAL * 100}%"><i></i><span>${st.name}<small>${st.note}</small></span></div>`).join('')}${frac > 0 ? `<div class="rcar" style="left:${frac * 100}%"></div>` : ''}</div>`;
-}
 const PRO_TIPS = [
   'Autos indicate left to turn right. Plan accordingly.',
   'Hover over cops: challan. Hover over cows: karma. Choose wisely.',
@@ -1645,14 +1526,6 @@ const PRO_TIPS = [
   'Honk to clear two-wheelers. Cows are immune.',
 ];
 function fillPause() {
-  const frac = clamp(car.s / TOTAL, 0, 1), km = (frac * 18).toFixed(1);
-  const etaMin = game.clock + (TOTAL - car.s) / 44 / SEC_PER_MIN * 1.1;
-  const late = etaMin > STANDUP_MIN, tot = game.challans.reduce((a, c) => a + c.amount, 0);
-  $('pzStats').innerHTML = `<div><b>${km}<small>km</small></b><span>of 18 km</span></div>
-    <div class="${late ? 'bad' : 'good'}"><b>${fmtClock(etaMin)}</b><span>ETA · ${late ? 'late-ish' : 'on time-ish'}</span></div>
-    <div><b>${Math.round(game.swag).toLocaleString('en-IN')}</b><span>swag</span></div>
-    <div><b>₹${tot.toLocaleString('en-IN')}</b><span>challans</span></div>`;
-  renderRoute($('routePause'), frac, `Now ${fmtClock(game.clock)} · Standup 9:30`);
   $('pzTip').textContent = pick(PRO_TIPS);
   syncAudioButtons();
 }
@@ -1716,12 +1589,10 @@ $('againBtn').addEventListener('click', startGame);
 $('resumeBtn').addEventListener('click', () => setPaused(false));
 $('restartBtn').addEventListener('click', startGame);
 $('pauseBtn').addEventListener('click', () => setPaused(true));
-document.querySelectorAll('.musicBtn').forEach(b => b.addEventListener('click', () => { unlockAudio(); AU.setMusic(!AU.musicOn); syncAudioButtons(); }));
-document.querySelectorAll('.sfxBtn').forEach(b => b.addEventListener('click', () => { unlockAudio(); AU.setSfx(!AU.sfxOn); syncAudioButtons(); }));
+document.querySelectorAll('.soundBtn').forEach(b => b.addEventListener('click', () => { unlockAudio(); AU.setMuted(!AU.muted); syncAudioButtons(); }));
 document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
 document.querySelectorAll('button').forEach(b => b.addEventListener('click', () => b.blur())); // keep SPACE from re-clicking
 setMode(driveMode);
-renderRoute($('routeTitle'), 0);
 syncAudioButtons();
 
 // ---------------------------------------------------------------------
@@ -1729,10 +1600,12 @@ syncAudioButtons();
 // ---------------------------------------------------------------------
 resetGame(); game.events = [];
 let last = performance.now();
+let viewScene = scene;
 function frame(now) {
   requestAnimationFrame(frame);
+  if (state === 'og') { renderer.render(viewScene, camera); return; }
   let dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (pressed.mute) { AU.setMuted(!AU.muted); hint(AU.muted ? '🔇 Muted · M to unmute' : '🔊 Sound on', 1.4); }
+  if (pressed.mute) { AU.setMuted(!AU.muted); syncAudioButtons(); hint(AU.muted ? '🔇 Muted · M to unmute' : '🔊 Sound on', 1.4); }
   if (state === 'title' || state === 'over') {
     if ((pressed.enter || (pressed.hop && state === 'title')) && !(state === 'over' && $('over').classList.contains('hidden'))) startGame();
     // idle showroom orbit on title
@@ -1769,19 +1642,50 @@ document.fonts && document.fonts.ready.then(() => {
   if (state !== 'title') return; texCache.clear(); resetGame(); game.events = [];
   if (OG_MODE) setupOgCard();
 });
-// ?og — poses the Roadster mid-flight over Silk Board under the share-card text, for generating og.png
+// ?og — share card: a parody of the launch-event photo. Dark stage, red floor light,
+// the Roadster mid-flip on a cold-gas trail over a lineup of autos, a cow, a BMTC bus and a tanker.
 function setupOgCard() {
   document.body.classList.add('og');
-  startGame(); AU.setMuted(true);
-  car.s = 912; car.x = 3; game.nextSpawn = 922; car.speed = 34;
-  window.__game.sim(0.4);
-  pressed.hop = true; keys.hop = true; window.__game.sim(0.75); keys.hop = false;
-  syncVisuals(0.016);
-  // hero framing: closer, low, car on the right third
-  const z = -car.s;
-  camera.position.set(car.x - 3.5, car.y + 1.2, z + 7.5); camera.lookAt(car.x - 3.3, car.y + 0.1, z - 6);
-  camera.fov = 55; camera.updateProjectionMatrix(); updateSky(0);
-  paused = true; ui.toasts.innerHTML = '';
+  state = 'og';
+  const st = new THREE.Scene();
+  st.background = new THREE.Color(0x030405); st.fog = new THREE.Fog(0x030405, 34, 95);
+  st.add(new THREE.HemisphereLight(0x9fb3c8, 0x0a0a0a, 0.6));
+  const key = new THREE.DirectionalLight(0xdfe8ff, 1.7); key.position.set(6, 18, 20); st.add(key);
+  const redFill = new THREE.DirectionalLight(0xff2a36, 0.3); redFill.position.set(0, 1.5, 14); st.add(redFill);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(220, 140), new THREE.MeshStandardMaterial({ color: 0x0b0c0f, roughness: 0.35, metalness: 0.3 }));
+  floor.rotation.x = -Math.PI / 2; st.add(floor);
+  for (const [z, w, o] of [[4.2, 36, 1], [5.4, 26, 0.45]]) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, 0.14), new THREE.MeshBasicMaterial({ color: 0xff2a36, transparent: true, opacity: o }));
+    m.rotation.x = -Math.PI / 2; m.position.set(-3, 0.02, z); st.add(m);
+  }
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(44, 6), new THREE.MeshBasicMaterial({ map: radialTex('rgba(255,40,50,0.5)', 'rgba(255,40,50,0)'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  glow.rotation.x = -Math.PI / 2; glow.position.set(-3, 0.03, 4.7); st.add(glow);
+  // the lineup, side-on — the Bengaluru edition of "a row of cars and a Semi"
+  let x = -15.5;
+  for (const k of ['auto', 'cow', 'auto', 'bus', 'auto', 'tanker']) {
+    const o = BUILDERS[k](), m = o.mesh;
+    if (k === 'cow') m.children[0].rotation.y = 0;
+    m.rotation.y = -Math.PI / 2;
+    x += o.d / 2; m.position.set(x, 0, 0); x += o.d / 2 + 0.7; st.add(m);
+  }
+  // the Roadster, mid-flip
+  st.add(carMesh); carMesh.rotation.order = 'YXZ';
+  carMesh.position.set(5.8, 7.2, 2.5); carMesh.rotation.set(2.6, -Math.PI / 2, 0.5); carMesh.scale.setScalar(1.5);
+  const carKey = new THREE.DirectionalLight(0xffffff, 1.2); carKey.position.set(4, 4, 20); st.add(carKey);
+  carMesh.glow.material.opacity = 0; carMesh.updateMatrixWorld(true);
+  const puffAt = (p, sc, op) => {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: PUFF_TEX, transparent: true, depthWrite: false, opacity: op }));
+    sp.scale.set(sc, sc, 1); sp.position.copy(p); st.add(sp);
+  };
+  for (let i = 0; i < 80; i++) { // vapour arc from the launch point up to the car
+    const t = i / 79, px = lerp(-19, 3.4, t), py = 0.6 + 7.0 * (1 - (1 - t) * (1 - t));
+    puffAt(new THREE.Vector3(px + rand(-0.4, 0.4), py + rand(-0.35, 0.35), rand(-0.6, 0.6)), lerp(3.6, 1.5, t) * rand(0.8, 1.3), (0.18 + 0.45 * t) * rand(0.6, 1));
+  }
+  for (const n of carMesh.nozzles) for (let i = 0; i < 4; i++) { const p = n.clone(); carMesh.localToWorld(p); p.add(new THREE.Vector3(rand(-0.8, 0.2), rand(-0.3, 0.6), rand(-0.4, 0.4))); puffAt(p, rand(0.9, 1.8), 0.7); }
+  for (let i = 0; i < 7; i++) puffAt(new THREE.Vector3(rand(-30, 30), rand(4, 18), -25), rand(14, 26), 0.035); // stage haze
+  camera.fov = 38; camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  camera.position.set(-1.5, 6.2, 30); camera.lookAt(-1.5, 6.0, 0);
+  viewScene = st;
 }
 requestAnimationFrame(frame);
 

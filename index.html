@@ -24,8 +24,8 @@
 <meta name="twitter:image" content="https://thevarun.github.io/roadster-bengaluru/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&family=Baloo+2:wght@600;800&family=Noto+Sans+Kannada:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=14">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
 <div id="app"></div>
@@ -91,58 +91,41 @@
 
 <!-- share-card layout, only used by ?og for generating og.png -->
 <div id="ogcard">
-  <div class="tt-top"><span class="brand">T E S L A</span><span class="chip">FAN PARODY</span></div>
-  <h1>ROADSTER</h1>
-  <div class="truckart"><span>ನಮ್ಮ ಬೆಂಗಳೂರು Edition</span></div>
-  <p>Fly a ₹2.5 crore Roadster over <b>Silk Board</b><br>to make your <b>9:30 standup</b>.</p>
-  <div class="og-cta">▶ Play free in your browser</div>
+  <div class="og-word">ROADSTER</div>
+  <div class="og-sub">NAMMA BENGALURU EDITION</div>
+  <div class="og-foot">A fan parody you can play · free in your browser</div>
 </div>
 
 <div id="title" class="overlay">
   <div class="tcard tt">
-    <div class="tt-top"><span class="brand">T E S L A</span><span class="chip">DELIVERY DAY</span></div>
+    <div class="brand">T E S L A</div>
     <h1>ROADSTER</h1>
-    <div class="truckart"><span>ನಮ್ಮ ಬೆಂಗಳೂರು Edition</span></div>
+    <div class="truckart"><span>Namma Bengaluru Edition</span></div>
     <p class="pitch">₹2.5 crore. It <b>flies</b>. You still have to cross <b>Silk Board</b> by the <b>9:30</b> standup.</p>
-    <div class="specs">
-      <div><b>0.8<small>s</small></b><span>0–60 mph</span></div>
-      <div><b>18<small>km/h</small></b><span>Bengaluru avg</span></div>
-      <div><b>3<small>days</small></b><span>Silk Board wait</span></div>
-    </div>
-    <div class="route" id="routeTitle"></div>
     <div class="kgrid">
-      <div><kbd>←</kbd><kbd>→</kbd><span>Steer · lanes optional</span></div>
+      <div><kbd>←</kbd><kbd>→</kbd><span>Steer</span></div>
       <div><kbd class="w">SPACE</kbd><span>Hop · hold to hover</span></div>
-      <div><kbd>F</kbd><span>Barrel roll (airborne)</span></div>
       <div><kbd>W</kbd><span>Rear thrusters</span></div>
-      <div><kbd>S</kbd><span>Brake (rarely used)</span></div>
-      <div><kbd>H</kbd><span>Horn (mandatory)</span></div>
-      <div><kbd>G</kbd><span>FSD (Supervised) 🙏</span></div>
-      <div><kbd>P</kbd><span>Chai break</span></div>
+      <div><kbd>F</kbd><span>Barrel roll (in the air)</span></div>
+      <div><kbd>S</kbd><span>Brake</span></div>
+      <div><kbd>H</kbd><span>Horn</span></div>
     </div>
     <div class="cta">
       <button id="startBtn">START COMMUTE</button>
       <div class="modes"><div class="lbl">DRIVE MODE</div><div class="seg"><button data-mode="chill">Chill</button><button data-mode="sport">Sport</button><button data-mode="plaid">Plaid</button></div></div>
     </div>
-    <div class="fine">SPACE / ENTER to start · Fly over cows. Never hit a cow. · <button class="linkbtn musicBtn">♫ Music: On</button> <button class="linkbtn sfxBtn">🔊 SFX: On</button></div>
-    <div class="fine legal">Fan-made parody. Not affiliated with Tesla, SpaceX, BMTC or any cow.</div>
-  </div>
-  <div class="stickers">
-    <div class="sticker hop">HORN<br>OK<br>PLEASE</div>
-    <div class="sticker nimbu">🍋🌶️<span>Nimbu-mirchi<br>pre-installed</span></div>
-    <div class="sticker cover">Pothole cover<b>NOT INCLUDED</b></div>
+    <div class="fine">G for FSD (Supervised) · P to pause · Fly over cows, never hit one · <button class="linkbtn soundBtn">🔊 Sound: On</button></div>
+    <div class="fine legal">Fan-made parody. Not affiliated with Tesla.</div>
   </div>
 </div>
 
 <div id="pause" class="overlay dim hidden">
   <div class="tcard pz">
-    <div class="tt-top"><span class="brand">PAUSED</span><span class="chip warm">CUTTING CHAI · ₹15</span></div>
+    <div class="brand">PAUSED</div>
     <h2>Chai break <span class="chai">☕</span></h2>
     <div class="ed">Traffic will wait. It always does.</div>
-    <div class="specs" id="pzStats"></div>
-    <div class="route" id="routePause"></div>
     <div class="tip"><span>BENGALURU PRO TIP</span><p id="pzTip"></p></div>
-    <div class="pz-row"><div class="modes"><div class="lbl">DRIVE MODE</div><div class="seg"><button data-mode="chill">Chill</button><button data-mode="sport">Sport</button><button data-mode="plaid">Plaid</button></div></div><div class="toggles"><button class="ghost sm musicBtn">♫ Music: On</button><button class="ghost sm sfxBtn">🔊 SFX: On</button></div></div>
+    <div class="pz-row"><div class="modes"><div class="lbl">DRIVE MODE</div><div class="seg"><button data-mode="chill">Chill</button><button data-mode="sport">Sport</button><button data-mode="plaid">Plaid</button></div></div><button class="ghost sm soundBtn">🔊 Sound: On</button></div>
     <div class="btnrow"><button id="resumeBtn" class="primary">RESUME</button><button id="restartBtn" class="ghost">RESTART</button></div>
     <div class="fine">P / Esc to resume</div>
   </div>
@@ -162,6 +145,6 @@
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
-<script type="module" src="game.js?v=14"></script>
+<script type="module" src="game.js?v=17"></script>
 </body>
 </html>

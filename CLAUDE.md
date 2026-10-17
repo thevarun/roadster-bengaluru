@@ -20,7 +20,9 @@ A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layou
   - `toast()`: phone notifications (WhatsApp, e-challan SMS).
   - `hint()`: bottom pill for tips.
   - `banner()`: stage names.
-- Humour lives in data arrays (`AUTO_SLOGANS`, `SHOPS`, `BILLBOARDS`, `TICKER`, `KANNADA_HITS`, `buildEvents()`). Keep Kannada/Kanglish lines accurate.
+- Humour lives in data arrays (`AUTO_SLOGANS`, `SHOPS`, `BILLBOARDS`, `TICKER`, `KANNADA_HITS`, `buildEvents()`). Kanglish lines are fine, but **only Latin script anywhere**: the audience is English-speaking.
+- Keep the scene calm. Buildings and vehicles carry almost no text (a few shop boards, HORN OK PLEASE on tankers), and the menus stay minimal. The user pushed back on visual clutter, so add detail sparingly.
+- Audio is SFX only (no music, removed as annoying), with one mute switch (`AU.setMuted`, persisted as `rb-muted`). Every voice, including the reverb return, must route through `AU.sfx` so that pause and mute really silence it.
 - Fan parody: keep the "not affiliated with Tesla" line on the title screen and in the README.
 
 ## Testing
@@ -30,7 +32,7 @@ A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layou
 - Audio is synthesised and starts on the first user gesture. Remember the user can hear the browser pane, so don't leave a game running.
 
 ## Share card and icons
-- `og.png` (1200×630) is a real frame from the game. `index.html?og` poses the car over Silk Board under the `#ogcard` layout (`setupOgCard()` in `game.js`). Regenerate it with the local server running:
+- `og.png` (1200×630) is a real render: `index.html?og` builds a parody of the Tesla launch-stage photo (dark stage, red floor light, Roadster mid-flip on a vapour trail over autos, a cow, a BMTC bus and a tanker) in `setupOgCard()`, with the wordmark from `#ogcard`. Regenerate it with the local server running:
   `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --user-data-dir=/tmp/chrome-og --hide-scrollbars --use-angle=swiftshader --enable-unsafe-swiftshader --force-device-scale-factor=1 --window-size=1200,630 --virtual-time-budget=8000 --screenshot="$PWD/og.png" "http://localhost:8742/?og"`
 - `favicon.svg` is the source icon. To make `apple-touch-icon.png` (180) and `favicon-32.png`, inline it as base64 in a `data:text/html` page, screenshot it at 600×600, and crop with `sips -c N N`. Headless Chrome won't go below its minimum window size.
 - OG and Twitter meta tags in `index.html` use absolute Pages URLs.

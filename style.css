@@ -93,7 +93,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 .brand { letter-spacing: .5em; font-size: 12px; color: var(--dim); font-weight: 600; }
 h1 { font-size: clamp(48px, 9vw, 104px); font-weight: 200; letter-spacing: .14em; margin: 4px 0 0; line-height: 1; }
 h2 { font-size: clamp(30px, 5vw, 52px); font-weight: 300; margin: 8px 0 4px; line-height: 1.1; }
-.ed { font-family: 'Baloo 2', 'Noto Sans Kannada', sans-serif; font-size: 22px; color: var(--marigold); margin-top: 4px; }
+.ed { font-family: 'Baloo 2', sans-serif; font-size: 22px; color: var(--marigold); margin-top: 4px; }
 .pitch { font-size: 16px; line-height: 1.55; color: rgba(255,255,255,.88); font-weight: 300; }
 .pitch b { font-weight: 600; color: #fff; }
 .ctl { list-style: none; padding: 0; margin: 14px 0 22px; font-size: 13px; color: var(--dim); line-height: 1.9; }
@@ -198,33 +198,11 @@ body.alarm #hud::before { content: ''; position: absolute; inset: 0; pointer-eve
 .tt h1 { font-size: clamp(44px, min(8.5vw, 12vh), 104px); }
 .truckart { display: inline-block; margin-top: 10px; padding: 3px; border-radius: 7px; transform: rotate(-1.5deg);
   background: repeating-linear-gradient(90deg, #e8432e 0 9px, #ffd23f 9px 18px, #1f8a3a 18px 27px, #2f6fd6 27px 36px); }
-.truckart span { display: block; background: #1a0f05; color: #ffb300; font-family: 'Baloo 2', 'Noto Sans Kannada', sans-serif; font-weight: 800;
+.truckart span { display: block; background: #1a0f05; color: #ffb300; font-family: 'Baloo 2', sans-serif; font-weight: 800;
   font-size: clamp(16px, 2.2vw, 22px); padding: 2px 16px 0; border-radius: 5px; }
-.tt .pitch { margin: 12px 0 0; font-size: 15px; }
-.specs { display: flex; gap: 28px; margin: 14px 0 4px; }
-.specs div { display: flex; flex-direction: column; }
-.specs b { font-size: clamp(22px, 2.6vw, 30px); font-weight: 300; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.specs b small { font-size: .5em; margin-left: 3px; color: var(--dim); font-weight: 400; }
-.specs span { font-size: 11px; color: var(--dim); margin-top: 2px; }
-.specs .good b { color: #7ee2a0; } .specs .bad b { color: #ff7b7b; }
+.tt .pitch { margin: 14px 0 4px; font-size: 16px; }
 
-.route { margin: 14px 0 6px; padding: 10px 14px 6px; border-radius: 12px; background: rgba(14,14,18,.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid var(--line); max-width: 500px; }
-.rhead { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; color: var(--dim); }
-.rhead b { color: #fff; font-weight: 600; }
-.reta em { font-style: normal; color: #ff7b7b; }
-.rline { position: relative; height: 6px; border-radius: 3px; margin: 30px 6px 30px;
-  background: linear-gradient(90deg, #3ec46d 0 14%, #f0a020 17%, #c81e1e 20% 31%, #f0a020 34% 58%, #e05a1e 62% 74%, #f0a020 78% 92%, #3ec46d 96%); }
-.rdone { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: rgba(120,120,130,.85); }
-.stop { position: absolute; top: 50%; }
-.stop i { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #fff; border: 2px solid #111; }
-.stop span { position: absolute; top: 10px; transform: translateX(-50%); white-space: nowrap; font-size: 11px; font-weight: 600; text-align: center; line-height: 1.15; }
-.stop.up span { top: auto; bottom: 10px; }
-.stop.first span { transform: none; left: -6px; text-align: left; }
-.stop.last span { transform: none; right: -6px; text-align: right; }
-.stop small { display: block; font-size: 10px; font-weight: 400; color: var(--dim); }
-.rcar { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #3e6ae1; border: 3px solid #fff; box-shadow: 0 0 12px #3e6ae1; }
-
-.kgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 18px; margin: 12px 0 16px; max-width: 500px; font-size: 12px; color: rgba(255,255,255,.78); }
+.kgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; margin: 16px 0 22px; max-width: 500px; font-size: 12px; color: rgba(255,255,255,.78); }
 .kgrid div { display: flex; align-items: center; gap: 6px; }
 kbd { display: inline-grid; place-items: center; min-width: 24px; height: 22px; padding: 0 6px; border-radius: 5px; font: 600 11px Inter, sans-serif;
   color: #111; background: linear-gradient(#fff, #d9d9d9); box-shadow: 0 2px 0 #8a8a8a; }
@@ -237,13 +215,6 @@ kbd.w { min-width: 58px; }
 .linkbtn:hover { color: #fff; }
 .linkbtn.off, .ghost.off { opacity: .55; }
 
-.stickers { position: absolute; right: 4vw; bottom: 8vh; display: flex; gap: 14px; align-items: flex-end; pointer-events: none; }
-.sticker { font-family: 'Baloo 2', sans-serif; font-weight: 800; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
-.sticker.hop { background: #ffd400; color: #d0131b; border: 4px solid #1b8f3a; padding: 6px 12px 4px; font-size: 18px; line-height: .95; text-align: center; transform: rotate(-7deg); border-radius: 6px; }
-.sticker.nimbu { background: #fff; color: #1f6b2c; padding: 8px 12px; border-radius: 999px; font-size: 22px; display: flex; align-items: center; gap: 8px; transform: rotate(4deg); }
-.sticker.nimbu span { font-size: 12px; line-height: 1.1; }
-.sticker.cover { background: #111; color: #fff; border: 2px dashed #ff9f1c; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; transform: rotate(-3deg); text-align: center; }
-.sticker.cover b { display: block; color: #ff9f1c; font-size: 15px; font-weight: 800; }
 
 /* ---------- pause screen */
 .pz h2 { margin-top: 10px; }
@@ -252,7 +223,7 @@ kbd.w { min-width: 58px; }
   border-left: 2px solid rgba(255,255,255,.6); animation: steam 2.2s ease-in-out infinite; }
 .chai::after { left: 58%; animation-delay: 1.1s; }
 @keyframes steam { 0% { opacity: 0; transform: translateY(6px) scaleY(.6); } 40% { opacity: .9; } 100% { opacity: 0; transform: translateY(-14px) scaleY(1.2) skewX(-12deg); } }
-.tip { margin: 8px 0 16px; padding: 10px 14px; border-left: 3px solid var(--marigold); background: rgba(255,159,28,.08); border-radius: 0 10px 10px 0; max-width: 500px; }
+.tip { margin: 18px 0 20px; padding: 10px 14px; border-left: 3px solid var(--marigold); background: rgba(255,159,28,.08); border-radius: 0 10px 10px 0; max-width: 500px; }
 .tip span { font-size: 10px; letter-spacing: .2em; color: var(--marigold); font-weight: 700; }
 .tip p { margin: 4px 0 0; font-family: 'Baloo 2', sans-serif; font-size: 17px; line-height: 1.3; }
 .pz-row { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -260,32 +231,17 @@ kbd.w { min-width: 58px; }
 .toggles { display: flex; gap: 8px; }
 .ghost.sm { padding: 9px 12px; font-size: 11px; letter-spacing: .04em; text-transform: none; }
 
-@media (max-height: 700px) {
-  .tt .pitch { display: none; }
-  .kgrid { gap: 4px 18px; margin: 8px 0 12px; }
-  .route { margin: 10px 0 4px; }
-  .specs { margin-top: 10px; }
-}
-@media (max-width: 1000px) { .stickers { display: none; } }
+@media (max-height: 600px) { .kgrid { gap: 4px 18px; margin: 8px 0 12px; } }
 @media (max-width: 760px) {
   .kgrid { display: none; }
-  .specs { gap: 18px; }
-  .route { padding: 8px 10px 4px; }
-  .rhead .reta { display: none; }
-  .stop span { font-size: 10px; }
-  .stop small { display: none; }
-  .rline { margin: 22px 6px 22px; }
   #fsd { top: 190px; }
 }
 
 /* ---------- ?og share card */
 #ogcard { display: none; }
 body.og #hud, body.og #title, body.og #touch, body.og #pause { display: none !important; }
-body.og #ogcard { display: flex; flex-direction: column; justify-content: center; position: fixed; inset: 0; padding: 0 64px;
-  background: linear-gradient(90deg, rgba(0,0,0,.86) 0%, rgba(0,0,0,.6) 40%, rgba(0,0,0,0) 66%); }
-#ogcard h1 { font-size: 118px; margin-top: 6px; }
-#ogcard .truckart { align-self: flex-start; }
-#ogcard .truckart span { font-size: 30px; padding: 2px 20px 0; }
-#ogcard p { font-size: 28px; font-weight: 300; line-height: 1.4; margin: 22px 0 26px; }
-#ogcard p b { font-weight: 600; }
-.og-cta { align-self: flex-start; background: #fff; color: #000; font-weight: 600; letter-spacing: .08em; font-size: 18px; padding: 14px 24px; border-radius: 8px; }
+body.og #ogcard { display: block; position: fixed; inset: 0; pointer-events: none; }
+#ogcard > div { position: absolute; left: 0; right: 0; text-align: center; }
+.og-word { top: 54px; font-size: 84px; font-weight: 200; letter-spacing: .34em; padding-left: .34em; color: #eef1f5; text-shadow: 0 0 28px rgba(190,210,255,.25); }
+.og-sub { top: 160px; font-size: 17px; font-weight: 600; letter-spacing: .55em; padding-left: .55em; color: #ff9f1c; }
+.og-foot { bottom: 24px; font-size: 16px; letter-spacing: .08em; color: rgba(255,255,255,.6); }
