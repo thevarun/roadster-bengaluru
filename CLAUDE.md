@@ -1,6 +1,6 @@
 # Roadster: Namma Bengaluru — agent notes
 
-A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layout → Silk Board → ORR → Marathahalli → Whitefield) before the 9:30 standup. Static site, no build step, no asset files.
+A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layout → Silk Board → ORR → Marathahalli → Whitefield) before the 9:30 standup. Static site, no build step. The only asset files are five small CC0 horn MP3s in `audio/`.
 
 ## Run / deploy
 - Local: `python3 -m http.server 8742` in this folder, then open http://localhost:8742. ES modules mean `file://` won't work.
@@ -26,6 +26,7 @@ A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layou
 - Humour lives in data arrays (`AUTO_SLOGANS`, `SHOPS`, `BILLBOARDS`, `TICKER`, `KANNADA_HITS`, `buildEvents()`). Kanglish lines are fine, but **only Latin script anywhere**: the audience is English-speaking.
 - Keep the scene calm. Buildings and vehicles carry almost no text (a few shop boards, HORN OK PLEASE on tankers), and the menus stay minimal. The user pushed back on visual clutter, so add detail sparingly.
 - Audio is SFX only (no music, removed as annoying), with one mute switch (`AU.setMuted`, persisted as `rb-muted`). Every voice, including the reverb return, must route through `AU.sfx` so that pause and mute really silence it.
+- Horns use real CC0 recordings (`SAMPLES` in `game.js`, credited in the README) through `AU.sample()`. Trim windows and gains were measured per file. Autos and bikes reuse the car honk, pitched up. Synth voices are the fallback and are still used for the Shaadi band-baaja and the musical truck horn. The user found the pure-synth horns inauthentic, so prefer recordings for anything that should sound real.
 - Fan parody: keep the "not affiliated with Tesla" line on the title screen and in the README.
 - Vehicles: `MODEL_ORDER` / `MODELS` (Roadster, Kaali-Peeli taxi, Shaadi Edition) and `PAINTS` sit above `buildRoadster(cfg)`. **Every version keeps the Roadster body.** Variants only dress it (Taxi: black body, yellow roof, TAXI sign, flag meter; Shaadi: instanced marigold and rose garlands). Flowers are Shaadi-only. An Ambassador variant was tried and cut as not distinct enough. Gameplay `mods` (hover drain, hop, steer, horn reach) are applied through `VEH`, and horns are per model (`AU.playerHorn(model)`). Saved as `rb-car`.
 - Showroom: its own room (`showroomScene`: dark studio, turntable, light strips, marigold toran). `setGarage(open, 'title'|'pause')` moves `carMesh` into that room and back. ‹ › or ←/→ swap cars, H tests the horn. Opens from the title card's "Enter the showroom" or the pause menu's "Change car". "Take delivery" plays the lemon-and-coconut pooja, but only when the choice changed. Debug: `__game.showroom.rot`, `__game.poojaStep(sec)`.

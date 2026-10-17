@@ -840,6 +840,15 @@ function updateParticles(dt) {
 //  sfx bus (incl. street reverb) -> compressor -> master. One mute switch (master).
 //  Horns are spatial (pan + distance lowpass) and type-specific.
 // ---------------------------------------------------------------------
+// Real horn recordings (CC0, BigSoundBank — see README). Trim windows and gains come from measuring each file;
+// gains level-match them to ~-14 dB RMS. If a file fails to load, the synth voices below take over.
+const SAMPLES = {
+  roadster: { url: 'audio/roadster-horn.mp3', start: 0.02, dur: 0.62, gain: 1.25 },
+  taxi: { url: 'audio/taxi-horn.mp3', start: 0.03, dur: 1.24, gain: 0.9 },
+  car: { url: 'audio/car-horn.mp3', start: 0.0, dur: 0.27, gain: 0.27 },
+  bus: { url: 'audio/bus-horn.mp3', start: 0.04, dur: 0.72, gain: 0.66 },
+  truck: { url: 'audio/truck-horn.mp3', start: 0.04, dur: 0.6, gain: 0.7 },
+};
 const HORNS = {
   car:  { f: [415, 494], type: 'sawtooth', bp: 1300, q: 1.2, dur: [0.14, 0.42], reps: [1, 3], gap: 0.09, vol: 0.10 },
   auto: { f: [640], type: 'square', bp: 1700, q: 3, dur: [0.07, 0.13], reps: [2, 4], gap: 0.07, vol: 0.08 },
@@ -864,6 +873,8 @@ const AU = {
     this.verb = ctx.createConvolver(); this.verb.buffer = this.impulse(2.2, 2.8);
     const vg = ctx.createGain(); vg.gain.value = 0.55; this.verb.connect(vg); vg.connect(this.sfx);
     this.white = this.noiseBuf(false); this.brown = this.noiseBuf(true);
+    this.buf = {};
+    for (const [k, S] of Object.entries(SAMPLES)) fetch(S.url).then(r => r.arrayBuffer()).then(a => ctx.decodeAudioData(a)).then(b => { this.buf[k] = b; }).catch(() => {});
     // continuous beds
     this.ambG = this.bed(this.brown, 'lowpass', 320, 0.6);              // far-off traffic rumble
     this.windG = this.bed(this.white, 'bandpass', 600, 0.5); this.windF = this._f;   // speed wind
@@ -946,8 +957,27 @@ const AU = {
   },
 
   // ---------- horns
+  // play a trimmed, level-matched recording; returns false if it isn't loaded (caller falls back to synth)
+  sample(name, { pan = 0, dist = 0, delay = 0, rate = 1, dur, vol = 1 } = {}) {
+    const S = SAMPLES[name], b = this.buf && this.buf[name];
+    if (!b) return false;
+    const ctx = this.ctx, t = this.now(delay), d = dur || S.dur, len = d / rate, lvl = S.gain * vol;
+    const src = ctx.createBufferSource(); src.buffer = b; src.playbackRate.value = rate;
+    const g = ctx.createGain(); g.gain.setValueAtTime(lvl, t); g.gain.setValueAtTime(lvl, t + Math.max(0, len - 0.06)); g.gain.linearRampToValueAtTime(0, t + len);
+    src.connect(g); g.connect(this.spatial(pan, dist, 0.1));
+    src.start(t, S.start, d + 0.02); src.stop(t + len + 0.05);
+    return true;
+  },
   honk(kind = 'car', pan = 0, dist = 0, delay = 0) {
     if (!this.ok()) return;
+    const o = { pan, dist, delay };
+    if (kind === 'car' && this.sample('car', { ...o, rate: rand(0.9, 1.12) })) { if (Math.random() < 0.3) this.sample('car', { ...o, delay: delay + 0.32, rate: rand(0.9, 1.12) }); return; }
+    if (kind === 'auto' || kind === 'bike') { // the real car honk, pitched up into a shrill two-blip "pee-peep"
+      const r = kind === 'auto' ? rand(1.45, 1.65) : rand(1.8, 2.0), v = kind === 'auto' ? 0.9 : 0.6;
+      if (this.sample('car', { ...o, rate: r, dur: 0.14, vol: v })) { this.sample('car', { ...o, delay: delay + 0.15, rate: r * 0.97, dur: 0.2, vol: v }); return; }
+    }
+    if (kind === 'bus' && this.sample('bus', { ...o, rate: rand(0.95, 1.05) })) return;
+    if (kind === 'truck' && Math.random() < 0.75 && this.sample('truck', { ...o, rate: rand(0.95, 1.05) })) return;
     if (kind === 'truck') return this.truckHorn(pan, dist, delay);
     if (kind === 'auto') return this.autoHorn(pan, dist, delay);
     const H = HORNS[kind] || HORNS.car, ctx = this.ctx, t = this.now(delay);
@@ -971,9 +1001,10 @@ const AU = {
   },
   playerHorn(model = 'roadster') {
     if (!this.ok()) return;
-    if (model === 'taxi') return this.taxiHorn();
+    if (model === 'taxi') return this.sample('taxi') || this.taxiHorn();
     if (model === 'shaadi') return this.bandBaaja();
-    // Roadster: a modern EV horn. Clean major-third dual tone that snaps into pitch, opens up, and lifts slightly at the tail.
+    if (this.sample('roadster')) return;
+    // synth fallback: a modern dual tone that snaps into pitch, opens up, and lifts slightly at the tail
     const ctx = this.ctx, t = this.now(), inp = this.spatial(0, 0, 0.12);
     const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 1.1; lp.connect(inp);
     lp.frequency.setValueAtTime(1600, t); lp.frequency.linearRampToValueAtTime(4200, t + 0.06);

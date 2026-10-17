@@ -42,8 +42,18 @@ HSR Layout → Silk Board Junction → Outer Ring Road / Bellandur → Marathaha
 ## Tech
 
 - [Three.js](https://threejs.org) r160 from a CDN, low-poly flat-shaded geometry, all built in code
-- All audio is synthesised with WebAudio (horns, moo, thrusters). No asset files.
+- Horns are real recordings (below), and everything else is synthesised with WebAudio (moo, thrusters, band-baaja, temple bell). If a recording fails to load, the horns fall back to synth.
 - `game.js` holds everything: world, traffic AI, physics, HUD, audio.
+
+## Credits
+
+Horn recordings by Joseph Sardin, [BigSoundBank](https://bigsoundbank.com), released under CC0 (public domain):
+
+- `audio/roadster-horn.mp3`: [Recent Car Horn #2](https://bigsoundbank.com/recent-car-horn-2-s0258.html)
+- `audio/taxi-horn.mp3`: [Old car horn #3](https://bigsoundbank.com/old-car-horn-3-s0256.html)
+- `audio/car-horn.mp3`: [Car horn #4](https://bigsoundbank.com/car-horn-4-s0260.html) (also pitched up for autos and two-wheelers)
+- `audio/bus-horn.mp3`: [Bus horn](https://bigsoundbank.com/bus-horn-s3594.html)
+- `audio/truck-horn.mp3`: [Truck Horn](https://bigsoundbank.com/truck-horn-s2721.html)
 
 ---
 
