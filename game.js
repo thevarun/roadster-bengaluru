@@ -554,79 +554,324 @@ function updateParticles(dt) {
 
 // ---------------------------------------------------------------------
 //  Audio — all synthesized, zero assets
+//  buses: sfx + music -> compressor -> master. Shared street reverb.
+//  Horns are spatial (pan + distance lowpass) and type-specific.
+//  Music: generative lo-fi raga groove (tanpura, tabla keherwa, bansuri, synth pad) in D.
 // ---------------------------------------------------------------------
+const PENTA = [293.66, 329.63, 369.99, 440, 493.88, 587.33, 659.25]; // D major pentatonic (Mohanam), D4–E5
+const CHORDS = [
+  [146.83, 185.0, 220.0, 329.63],   // Dmaj9
+  [123.47, 146.83, 185.0, 220.0],   // Bm7
+  [98.0, 146.83, 185.0, 246.94],    // Gmaj7
+  [110.0, 146.83, 164.81, 220.0],   // Asus
+];
+const KEHERWA = ['dha', 'ge', 'na', 'ti', 'na', 'ka', 'dhi', 'na'];
+const HORNS = {
+  car:  { f: [415, 494], type: 'sawtooth', bp: 1300, q: 1.2, dur: [0.14, 0.42], reps: [1, 3], gap: 0.09, vol: 0.10 },
+  auto: { f: [640], type: 'square', bp: 1700, q: 3, dur: [0.07, 0.13], reps: [2, 4], gap: 0.07, vol: 0.08 },
+  bike: { f: [880, 1046], type: 'square', bp: 2200, q: 2.5, dur: [0.05, 0.09], reps: [2, 3], gap: 0.06, vol: 0.05 },
+  bus:  { f: [196, 247, 294], type: 'sawtooth', bp: 900, q: 0.9, dur: [0.35, 0.7], reps: [1, 2], gap: 0.15, vol: 0.10 },
+};
+
 const AU = {
-  ctx: null, master: null, muted: false,
+  ctx: null, muted: false, musicOn: true, sfxOn: true, scene: 'title', paused: false, intensity: 0,
   init() {
     if (this.ctx) return;
     const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
     const ctx = this.ctx = new C();
-    this.master = ctx.createGain(); this.master.gain.value = 0.55; this.master.connect(ctx.destination);
-    // noise buffer
-    const nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate); const d = nb.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    this.noise = nb;
-    // EV whine
-    this.eng = ctx.createOscillator(); this.eng.type = 'sawtooth';
-    this.eng2 = ctx.createOscillator(); this.eng2.type = 'sine';
-    const ef = ctx.createBiquadFilter(); ef.type = 'lowpass'; ef.frequency.value = 900;
-    this.engG = ctx.createGain(); this.engG.gain.value = 0;
-    this.eng.connect(ef); this.eng2.connect(ef); ef.connect(this.engG); this.engG.connect(this.master);
-    this.eng.start(); this.eng2.start();
-    // thruster hiss
-    const ns = ctx.createBufferSource(); ns.buffer = nb; ns.loop = true;
-    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1400; bp.Q.value = 0.6;
-    this.thrG = ctx.createGain(); this.thrG.gain.value = 0;
-    ns.connect(bp); bp.connect(this.thrG); this.thrG.connect(this.master); ns.start();
-    this.thrF = bp;
+    try { this.musicOn = localStorage.getItem('rb-music') !== '0'; this.sfxOn = localStorage.getItem('rb-sfx') !== '0'; } catch (e) {}
+    this.master = ctx.createGain(); this.master.gain.value = this.muted ? 0 : 0.9; this.master.connect(ctx.destination);
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.25;
+    comp.connect(this.master);
+    // analyser tap for level checks (debug)
+    this.meter = ctx.createAnalyser(); this.meter.fftSize = 2048; comp.connect(this.meter);
+    this.sfx = ctx.createGain(); this.sfx.gain.value = this.sfxOn ? 1 : 0; this.sfx.connect(comp);
+    this.mus = ctx.createGain(); this.mus.gain.value = this.musicOn ? 0.42 : 0;
+    this.musF = ctx.createBiquadFilter(); this.musF.type = 'lowpass'; this.musF.frequency.value = 16000;
+    this.mus.connect(this.musF); this.musF.connect(comp);
+    this.verb = ctx.createConvolver(); this.verb.buffer = this.impulse(2.2, 2.8);
+    const vg = ctx.createGain(); vg.gain.value = 0.55; this.verb.connect(vg); vg.connect(comp);
+    const mv = ctx.createGain(); mv.gain.value = 0.35; this.musF.connect(mv); mv.connect(this.verb);
+    this.white = this.noiseBuf(false); this.brown = this.noiseBuf(true);
+    // continuous beds
+    this.ambG = this.bed(this.brown, 'lowpass', 320, 0.6);              // far-off traffic rumble
+    this.windG = this.bed(this.white, 'bandpass', 600, 0.5); this.windF = this._f;   // speed wind
+    this.thrG = this.bed(this.white, 'highpass', 1400, 0.7); this.thrF = this._f;    // cold-gas hiss
+    // EV motor: soft sine pair + faint inverter whine (Teslas are quiet; the city isn't)
+    this.motorG = ctx.createGain(); this.motorG.gain.value = 0; this.motorG.connect(this.sfx);
+    this.motor = ctx.createOscillator(); this.motor.type = 'sine'; this.motor.connect(this.motorG); this.motor.start();
+    const m2g = ctx.createGain(); m2g.gain.value = 0.35; m2g.connect(this.motorG);
+    this.motor2 = ctx.createOscillator(); this.motor2.type = 'triangle'; this.motor2.connect(m2g); this.motor2.start();
+    this.whineG = ctx.createGain(); this.whineG.gain.value = 0; this.whineG.connect(this.sfx);
+    this.whine = ctx.createOscillator(); this.whine.type = 'sine'; this.whine.connect(this.whineG); this.whine.start();
+    // music clock
+    this.bpm = 92; this.mStep = 0; this.mNext = ctx.currentTime + 0.2; this.melIdx = 3;
+    setInterval(() => this.musicTick(), 40);
   },
-  t() { return this.ctx.currentTime; },
+  // ---------- plumbing
+  noiseBuf(brown) {
+    const ctx = this.ctx, b = ctx.createBuffer(1, ctx.sampleRate * 3, ctx.sampleRate), d = b.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < d.length; i++) { const w = Math.random() * 2 - 1; if (brown) { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w; }
+    return b;
+  },
+  impulse(dur, decay) {
+    const ctx = this.ctx, len = ctx.sampleRate * dur, b = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay); }
+    return b;
+  },
+  bed(buf, type, freq, q) {
+    const ctx = this.ctx, s = ctx.createBufferSource(); s.buffer = buf; s.loop = true;
+    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+    const g = ctx.createGain(); g.gain.value = 0;
+    s.connect(f); f.connect(g); g.connect(this.sfx); s.start(0, Math.random() * 2);
+    this._f = f; return g;
+  },
+  // spatial input: lowpass + level by distance, stereo pan, reverb send. Returns the node to connect sources into.
+  spatial(pan = 0, dist = 0, verb = 0.12, bus = this.sfx) {
+    const ctx = this.ctx;
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lerp(7000, 850, dist);
+    const g = ctx.createGain(); g.gain.value = 1 - dist * 0.75;
+    f.connect(g);
+    if (ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = clamp(pan, -1, 1); g.connect(p); p.connect(bus); } else g.connect(bus);
+    const s = ctx.createGain(); s.gain.value = verb + dist * 0.6; g.connect(s); s.connect(this.verb);
+    return f;
+  },
+  env(g, t, a, peak, hold, r) {
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), t + a);
+    g.gain.setValueAtTime(Math.max(peak, 0.0002), t + a + hold); g.gain.exponentialRampToValueAtTime(0.0001, t + a + hold + r);
+  },
+  osc(type, f, t, dur, dest) {
+    const o = this.ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t); o.connect(dest); o.start(t); o.stop(t + dur + 0.05); return o;
+  },
+  noise(t, dur, type, freq, q, vol, dest, buf = this.white) {
+    const ctx = this.ctx, s = ctx.createBufferSource(); s.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+    const g = ctx.createGain(); this.env(g, t, 0.005, vol, 0, dur);
+    s.connect(f); f.connect(g); g.connect(dest); s.start(t, Math.random() * 2); s.stop(t + dur + 0.1); return f;
+  },
+  ok() { return this.ctx && this.ctx.state === 'running'; },
+  now(d = 0) { return this.ctx.currentTime + 0.01 + d; },
+
+  // ---------- state
+  setScene(sc) { this.scene = sc; },
+  setPaused(p) {
+    this.paused = p; if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.sfx.gain.setTargetAtTime(p || !this.sfxOn ? 0 : 1, t, 0.05);
+    this.musF.frequency.setTargetAtTime(p ? 650 : 16000, t, 0.15);   // muffled, like music from the chai stall radio
+  },
+  setMuted(m) { this.muted = m; if (this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.9, this.ctx.currentTime, 0.03); },
+  setMusic(on) { this.musicOn = on; try { localStorage.setItem('rb-music', on ? '1' : '0'); } catch (e) {} if (this.mus) this.mus.gain.setTargetAtTime(on ? 0.42 : 0, this.ctx.currentTime, 0.1); },
+  setSfx(on) { this.sfxOn = on; try { localStorage.setItem('rb-sfx', on ? '1' : '0'); } catch (e) {} if (this.sfx) this.sfx.gain.setTargetAtTime(on && !this.paused ? 1 : 0, this.ctx.currentTime, 0.05); },
   setEngine(speed, thrust) {
     if (!this.ctx) return;
-    const t = this.t();
-    this.eng.frequency.setTargetAtTime(60 + speed * 3.2, t, 0.1);
-    this.eng2.frequency.setTargetAtTime(300 + speed * 14, t, 0.1);
-    this.engG.gain.setTargetAtTime(state === 'playing' ? 0.035 + speed * 0.0006 : 0, t, 0.2);
-    this.thrG.gain.setTargetAtTime(thrust * 0.32, t, 0.05);
-    this.thrF.frequency.setTargetAtTime(900 + thrust * 1400, t, 0.1);
+    const t = this.ctx.currentTime, on = this.scene === 'play' && !this.paused, k = speed / 70;
+    const base = 70 + speed * 2.2;
+    this.motor.frequency.setTargetAtTime(base, t, 0.08); this.motor2.frequency.setTargetAtTime(base * 2.01, t, 0.08);
+    this.motorG.gain.setTargetAtTime(on ? 0.035 + k * 0.05 : 0, t, 0.15);
+    this.whine.frequency.setTargetAtTime(900 + speed * 32, t, 0.1);
+    this.whineG.gain.setTargetAtTime(on ? 0.004 + k * 0.008 : 0, t, 0.15);
+    this.windG.gain.setTargetAtTime(on ? k * k * 0.11 : 0, t, 0.2); this.windF.frequency.setTargetAtTime(450 + speed * 18, t, 0.2);
+    this.ambG.gain.setTargetAtTime(on ? 0.12 : this.scene === 'title' ? 0.05 : 0.03, t, 0.4);
+    this.thrG.gain.setTargetAtTime(on ? thrust * 0.12 : 0, t, 0.04); this.thrF.frequency.setTargetAtTime(1100 + thrust * 1600, t, 0.08);
   },
-  tone(freq, dur, type = 'square', vol = 0.2, pan = 0, when = 0, slide = 0) {
-    if (!this.ctx) return;
-    const t = this.t() + when;
-    const o = this.ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(freq, t);
-    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq * slide), t + dur);
-    const g = this.ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.setValueAtTime(vol, t + dur * 0.7); g.gain.linearRampToValueAtTime(0, t + dur);
-    const p = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
-    o.connect(g); if (p) { p.pan.value = pan; g.connect(p); p.connect(this.master); } else g.connect(this.master);
-    o.start(t); o.stop(t + dur + 0.05);
+
+  // ---------- horns
+  honk(kind = 'car', pan = 0, dist = 0, delay = 0) {
+    if (!this.ok()) return;
+    if (kind === 'truck') return this.truckHorn(pan, dist, delay);
+    const H = HORNS[kind] || HORNS.car, ctx = this.ctx, t = this.now(delay);
+    const inp = this.spatial(pan, dist, 0.1);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = H.bp; bp.Q.value = H.q; bp.connect(inp);
+    const reps = H.reps[0] + ((Math.random() * (H.reps[1] - H.reps[0] + 1)) | 0);
+    const dur = rand(H.dur[0], H.dur[1]), pj = rand(0.94, 1.06);
+    for (let r = 0; r < reps; r++) {
+      const t0 = t + r * (dur + H.gap), g = ctx.createGain(); this.env(g, t0, 0.008, H.vol * 3, dur, 0.05); g.connect(bp);
+      for (const f of H.f) {
+        const o = this.osc(H.type, f * pj * (kind === 'bus' ? 1.05 : 1), t0, dur + 0.1, g);
+        if (kind === 'bus') o.frequency.exponentialRampToValueAtTime(f * pj, t0 + 0.08); // air-horn sag
+      }
+    }
   },
-  noiseHit(dur = 0.3, freq = 800, vol = 0.4, type = 'lowpass') {
-    if (!this.ctx) return;
-    const t = this.t(); const s = this.ctx.createBufferSource(); s.buffer = this.noise;
-    const f = this.ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq;
-    const g = this.ctx.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    s.connect(f); f.connect(g); g.connect(this.master); s.start(t, Math.random()); s.stop(t + dur);
+  truckHorn(pan, dist, delay) { // pressure horn "la-la-la"
+    const ctx = this.ctx, t = this.now(delay), inp = this.spatial(pan, dist, 0.15);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200; lp.connect(inp);
+    const tune = pick([[523, 659, 784, 659, 587, 523], [659, 784, 880, 784, 659], [587, 659, 587, 523, 587]]);
+    tune.forEach((n, i) => { const g = ctx.createGain(); this.env(g, t + i * 0.14, 0.01, 0.07, 0.1, 0.03); g.connect(lp); this.osc('square', n, t + i * 0.14, 0.15, g); this.osc('triangle', n * 1.003, t + i * 0.14, 0.15, g); });
   },
-  horn(pitch = 1, pan = 0, vol = 0.18, dur = 0.32) { this.tone(400 * pitch, dur, 'square', vol * 0.6, pan); this.tone(505 * pitch, dur, 'sawtooth', vol * 0.4, pan); },
-  musicalHorn(pan = 0) { // truck "pom-pom" melody horn
-    const notes = [523, 659, 784, 659, 523, 784]; notes.forEach((n, i) => this.tone(n, 0.16, 'square', 0.06, pan, i * 0.15));
+  playerHorn() { // the Roadster: crisp, expensive, dual-tone. Also ignored.
+    if (!this.ok()) return;
+    const ctx = this.ctx, t = this.now(), inp = this.spatial(0, 0, 0.08);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = 0.8; bp.connect(inp);
+    const g = ctx.createGain(); this.env(g, t, 0.01, 0.35, 0.24, 0.06); g.connect(bp);
+    this.osc('sawtooth', 440, t, 0.35, g); this.osc('sawtooth', 554.4, t, 0.35, g);
   },
-  moo() { if (!this.ctx) return; this.tone(150, 1.0, 'sawtooth', 0.22, 0, 0, 0.6); this.tone(152, 1.0, 'triangle', 0.15, 0, 0, 0.62); },
-  crash() { this.noiseHit(0.45, 900, 0.5); this.tone(70, 0.3, 'sine', 0.5, 0, 0, 0.5); this.tone(820, 0.08, 'square', 0.06, 0, 0.05); },
-  hop() { this.noiseHit(0.35, 2400, 0.35, 'bandpass'); this.tone(220, 0.2, 'sine', 0.12, 0, 0, 2.2); },
-  land() { this.tone(90, 0.15, 'sine', 0.3, 0, 0, 0.6); this.noiseHit(0.12, 500, 0.2); },
-  thud() { this.tone(60, 0.2, 'sine', 0.45, 0, 0, 0.5); this.noiseHit(0.2, 400, 0.3); },
-  ching() { this.tone(1318, 0.09, 'triangle', 0.2); this.tone(1760, 0.3, 'triangle', 0.2, 0, 0.08); },
-  ping() { this.tone(880, 0.07, 'sine', 0.14); this.tone(1320, 0.12, 'sine', 0.14, 0, 0.08); },
-  stunt() { [523, 659, 784, 1046].forEach((n, i) => this.tone(n, 0.12, 'square', 0.07, 0, i * 0.07)); },
-  setMuted(m) { this.muted = m; if (this.master) this.master.gain.value = m ? 0 : 0.55; },
+
+  // ---------- sfx
+  moo(pan = 0) {
+    if (!this.ok()) return;
+    const ctx = this.ctx, t = this.now(), inp = this.spatial(pan, 0.1, 0.2);
+    const f1 = ctx.createBiquadFilter(); f1.type = 'bandpass'; f1.frequency.value = 480; f1.Q.value = 3;
+    const f2 = ctx.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = 950; f2.Q.value = 5;
+    const g = ctx.createGain(); this.env(g, t, 0.18, 0.9, 0.75, 0.45);
+    const g2 = ctx.createGain(); g2.gain.value = 0.4;
+    g.connect(f1); g.connect(g2); g2.connect(f2); f1.connect(inp); f2.connect(inp);
+    const o = this.osc('sawtooth', 105, t, 1.5, g);
+    o.frequency.exponentialRampToValueAtTime(148, t + 0.3); o.frequency.exponentialRampToValueAtTime(122, t + 0.95); o.frequency.exponentialRampToValueAtTime(92, t + 1.35);
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 5; const lg = ctx.createGain(); lg.gain.value = 3; lfo.connect(lg); lg.connect(o.frequency); lfo.start(t); lfo.stop(t + 1.5);
+  },
+  crash() {
+    if (!this.ok()) return;
+    const t = this.now(), inp = this.spatial(0, 0, 0.15);
+    this.noise(t, 0.4, 'lowpass', 260, 0.7, 0.9, inp, this.brown);      // body thump
+    this.noise(t, 0.22, 'bandpass', 2400, 2.5, 0.25, inp);               // metal
+    const g = this.ctx.createGain(); this.env(g, t, 0.003, 0.5, 0.02, 0.25); g.connect(inp);
+    this.osc('sine', 70, t, 0.3, g).frequency.exponentialRampToValueAtTime(40, t + 0.25);
+  },
+  thud() {
+    if (!this.ok()) return;
+    const t = this.now(), inp = this.spatial(0, 0, 0.05);
+    const g = this.ctx.createGain(); this.env(g, t, 0.003, 0.45, 0.01, 0.18); g.connect(inp);
+    this.osc('sine', 85, t, 0.22, g).frequency.exponentialRampToValueAtTime(45, t + 0.18);
+    this.noise(t, 0.15, 'lowpass', 220, 0.7, 0.5, inp, this.brown);
+  },
+  land() { this.thud(); },
+  hop() { // cold-gas "pssshh" + soft thunk
+    if (!this.ok()) return;
+    const t = this.now(), inp = this.spatial(0, 0, 0.12);
+    const f = this.noise(t, 0.4, 'highpass', 1600, 0.5, 0.32, inp);
+    f.frequency.setValueAtTime(3200, t); f.frequency.exponentialRampToValueAtTime(900, t + 0.4);
+    const g = this.ctx.createGain(); this.env(g, t, 0.003, 0.25, 0.01, 0.1); g.connect(inp);
+    this.osc('sine', 160, t, 0.15, g).frequency.exponentialRampToValueAtTime(90, t + 0.1);
+  },
+  whoosh() {
+    if (!this.ok()) return;
+    const t = this.now(), f = this.noise(t, 0.6, 'bandpass', 400, 1.2, 0.35, this.spatial(0, 0, 0.3));
+    f.frequency.setValueAtTime(400, t); f.frequency.exponentialRampToValueAtTime(3200, t + 0.5);
+  },
+  pluck(f, t, vol = 0.12, dest) {
+    const g = this.ctx.createGain(); this.env(g, t, 0.004, vol, 0.01, 0.45); g.connect(dest);
+    this.osc('triangle', f, t, 0.5, g); this.osc('sine', f * 2, t, 0.3, g);
+  },
+  ping() { if (!this.ok()) return; const t = this.now(), d = this.spatial(0.3, 0, 0.1); this.pluck(1174.7, t, 0.07, d); this.pluck(1568, t + 0.09, 0.07, d); },
+  ching() {
+    if (!this.ok()) return;
+    const t = this.now(), d = this.spatial(0, 0, 0.15);
+    this.noise(t, 0.05, 'highpass', 5000, 0.7, 0.2, d);
+    this.pluck(1318.5, t + 0.02, 0.12, d); this.pluck(1760, t + 0.1, 0.12, d); this.pluck(2637, t + 0.1, 0.05, d);
+  },
+  stunt() { if (!this.ok()) return; const t = this.now(), d = this.spatial(0, 0, 0.25); [587.3, 740, 880, 1174.7].forEach((n, i) => this.pluck(n, t + i * 0.07, 0.11, d)); },
+  fsdEngage() { if (!this.ok()) return; const t = this.now(), d = this.spatial(0, 0, 0.3); this.pluck(659.3, t, 0.12, d); this.pluck(987.8, t + 0.13, 0.12, d); },
+  fsdAlarm() { // takeover-immediately triple beeps
+    if (!this.ok()) return;
+    const ctx = this.ctx, t = this.now(), d = this.spatial(0, 0, 0.05);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3500; lp.connect(d);
+    for (let grp = 0; grp < 3; grp++) for (let b = 0; b < 3; b++) {
+      const t0 = t + grp * 0.48 + b * 0.11, g = ctx.createGain(); this.env(g, t0, 0.004, 0.16, 0.055, 0.02); g.connect(lp);
+      this.osc('square', 1568, t0, 0.09, g);
+    }
+  },
+
+  // ---------- music
+  musicTick() {
+    if (!this.ok() || !this.musicOn) { if (this.ctx) this.mNext = this.ctx.currentTime + 0.1; return; }
+    const ctx = this.ctx;
+    if (this.mNext < ctx.currentTime) this.mNext = ctx.currentTime + 0.05;
+    const stepDur = 60 / this.bpm / 2; // eighth notes
+    while (this.mNext < ctx.currentTime + 0.25) { this.musicStep(this.mStep, this.mNext, stepDur); this.mNext += stepDur; this.mStep++; }
+  },
+  musicStep(i, t, sd) {
+    const pos = i % 8, bar = Math.floor(i / 8);
+    if (i % 16 === 0) this.pad(CHORDS[(i / 16 | 0) % 4], t, sd * 16);
+    if (i % 4 === 0) this.tanpura([110, 146.83, 146.83, 73.42][(i / 4) % 4], t);
+    const play = this.scene === 'play' && !this.paused;
+    if (play) {
+      const hum = rand(0, 0.008), acc = pos === 0 ? 1.15 : rand(0.85, 1.0);
+      this.bol(KEHERWA[pos], t + hum, acc);
+      if (this.intensity > 0 && pos === 7) { this.bol('ti', t + sd / 2, 0.7); }               // fills when it's tense
+      if (this.intensity > 0 && pos === 3 && Math.random() < 0.5) this.bol('ka', t + sd / 2, 0.8);
+    }
+    // bansuri phrase: call-and-response, two bars on, two bars off
+    if (bar % 4 >= 2 && pos % 2 === 0 && Math.random() < (play ? 0.6 : 0.4)) {
+      this.melIdx = clamp(this.melIdx + pick([-2, -1, -1, 1, 1, 2]), 0, PENTA.length - 1);
+      this.bansuri(PENTA[this.melIdx], t, sd * pick([1, 2, 2, 3]));
+    }
+  },
+  pad(freqs, t, dur) {
+    const ctx = this.ctx, lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 850; lp.Q.value = 0.4; lp.connect(this.mus);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.022, t + 1.2);
+    g.gain.setValueAtTime(0.022, t + dur - 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.6); g.connect(lp);
+    for (const f of freqs) for (const det of [-7, 7]) { const o = this.osc('sawtooth', f, t, dur + 0.7, g); o.detune.value = det; }
+  },
+  tanpura(f, t) {
+    const ctx = this.ctx, bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.5;
+    bp.frequency.setValueAtTime(2400, t); bp.frequency.exponentialRampToValueAtTime(700, t + 2.2); // jawari shimmer
+    const g = ctx.createGain(); this.env(g, t, 0.01, 0.06, 0.05, 2.6);
+    bp.connect(g); g.connect(this.mus);
+    this.osc('sawtooth', f, t, 2.8, bp); this.osc('sawtooth', f * 1.002, t, 2.8, bp);
+  },
+  bol(b, t, acc = 1) {
+    const ctx = this.ctx, out = this.mus;
+    const bayan = (slide) => {
+      const g = ctx.createGain(); this.env(g, t, 0.003, 0.26 * acc, 0.02, slide ? 0.45 : 0.32); g.connect(out);
+      const o = this.osc('sine', slide ? 68 : 88, t, 0.55, g);
+      o.frequency.exponentialRampToValueAtTime(slide ? 108 : 58, t + (slide ? 0.22 : 0.28));
+    };
+    const dayan = (decay, v = 0.13) => {
+      const g = ctx.createGain(); this.env(g, t, 0.002, v * acc, 0.005, decay); g.connect(out);
+      const f = 293.66;
+      this.osc('sine', f, t, decay + 0.1, g);
+      const h = ctx.createGain(); h.gain.value = 0.45; h.connect(g); this.osc('sine', f * 2.0, t, decay + 0.1, h);
+      const h3 = ctx.createGain(); h3.gain.value = 0.2; h3.connect(g); this.osc('sine', f * 3.01, t, decay, h3);
+      this.noise(t, 0.012, 'highpass', 3500, 0.7, 0.05 * acc, out);
+    };
+    if (b === 'dha') { bayan(false); dayan(0.3); }
+    else if (b === 'ge') bayan(true);
+    else if (b === 'na') dayan(0.26);
+    else if (b === 'ti') dayan(0.06, 0.09);
+    else if (b === 'ka') this.noise(t, 0.05, 'lowpass', 400, 0.8, 0.22 * acc, out, this.brown);
+    else if (b === 'dhi') { bayan(false); dayan(0.14, 0.1); }
+  },
+  bansuri(f, t, dur) {
+    const ctx = this.ctx, g = ctx.createGain(); this.env(g, t, 0.06, 0.05, Math.max(0.05, dur - 0.1), 0.22); g.connect(this.mus);
+    const o = this.osc('sine', f * 0.97, t, dur + 0.3, g); o.frequency.exponentialRampToValueAtTime(f, t + 0.07); // meend into the note
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 5.3; const lg = ctx.createGain();
+    lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(f * 0.007, t + 0.25); lfo.connect(lg); lg.connect(o.frequency); lfo.start(t); lfo.stop(t + dur + 0.3);
+    const br = this.noise(t, dur + 0.1, 'bandpass', f, 9, 0.012, g); // breath
+  },
 };
+try { AU.musicOn = localStorage.getItem('rb-music') !== '0'; AU.sfxOn = localStorage.getItem('rb-sfx') !== '0'; } catch (e) {}
+let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked) return; audioUnlocked = true;
+  AU.init(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume();
+  syncAudioButtons();
+}
+addEventListener('pointerdown', unlockAudio); addEventListener('keydown', unlockAudio);
+function syncAudioButtons() {
+  for (const el of document.querySelectorAll('.musicBtn')) { el.textContent = '♫ Music: ' + (AU.musicOn ? 'On' : 'Off'); el.classList.toggle('off', !AU.musicOn); }
+  for (const el of document.querySelectorAll('.sfxBtn')) { el.textContent = '🔊 SFX: ' + (AU.sfxOn ? 'On' : 'Off'); el.classList.toggle('off', !AU.sfxOn); }
+}
+const HORN_OF = { auto: 'auto', bike: 'bike', bus: 'bus', car: 'car' };
+const hornKind = (o) => o.kind === 'tanker' ? (Math.random() < 0.5 ? 'truck' : 'bus') : HORN_OF[o.kind] || 'car';
+// spatial, density-driven street honks (replaces constant random honking)
+function ambientHonks() {
+  const carZ = -car.s;
+  const near = obstacles.filter(o => HORN_OF[o.kind] || o.kind === 'tanker').filter(o => o.z > carZ - 110 && o.z < carZ + 25);
+  game.ambT = rand(2, 4.5) / (1 + near.length * 0.03) * (game.stage === 1 ? 0.6 : 1);
+  if (!near.length) { if (Math.random() < 0.5) AU.honk(pick(['car', 'auto', 'bus']), rand(-1, 1), rand(0.75, 1)); return; }
+  const v = pick(near), place = (o) => [clamp((o.x - car.x) / 12, -1, 1), clamp(Math.abs(carZ - o.z) / 110, 0, 1)];
+  AU.honk(hornKind(v), ...place(v));
+  if (Math.random() < 0.3) { const w = pick(near); AU.honk(hornKind(w), ...place(w), rand(0.25, 0.7)); } // someone always honks back
+}
 
 // ---------------------------------------------------------------------
 //  UI helpers
 // ---------------------------------------------------------------------
 const $ = (id) => document.getElementById(id);
-const ui = { spd: $('spd'), clock: $('clock'), progfill: $('progfill'), progcar: $('progcar'), stage: $('stageName'), air: $('airfill'), swag: $('swag'), challan: $('challan'), flash: $('flash'), banner: $('banner'), hint: $('hint'), toasts: $('toasts'), foam: $('foam'), tick: $('tick') };
+const ui = { fsd: $('fsd'), fsdState: $('fsdState'), fsdDetect: $('fsdDetect'), fsdMsg: $('fsdMsg'), spd: $('spd'), clock: $('clock'), progfill: $('progfill'), progcar: $('progcar'), stage: $('stageName'), air: $('airfill'), swag: $('swag'), challan: $('challan'), flash: $('flash'), banner: $('banner'), hint: $('hint'), toasts: $('toasts'), foam: $('foam'), tick: $('tick') };
 { // progress ticks
   const pt = $('progticks'); STAGES.slice(1).forEach(st => { const s = document.createElement('span'); s.style.left = (st.s / TOTAL * 100) + '%'; pt.appendChild(s); });
 }
@@ -699,7 +944,7 @@ function resetGame() {
   Object.assign(car, { x: -3, y: 0, s: 0, vy: 0, vx: 0, speed: 0, air: 100, onGround: true, roll: 0, rolling: false, hopHeld: 0, hoverArmed: false, thrust: 0, support: null, shake: 0, crashCd: 0, tilt: 0, pitch: 0 });
   Object.assign(game, {
     clock: START_MIN, t: 0, swag: 0, challans: [], cowsRespected: 0, cowsHit: 0, potholes: 0, crashes: 0, honks: 0, rolls: 0, surf: 0, hops: 0,
-    stage: -1, nextSpawn: 135, events: buildEvents(), lateMsgs: [9 * 60 + 31, 9 * 60 + 40, 9 * 60 + 52, 10 * 60 + 5], foamT: 0, ambT: 1, pausedT: 0, fsdCd: 0,
+    stage: -1, nextSpawn: 135, events: buildEvents(), lateMsgs: [9 * 60 + 31, 9 * 60 + 40, 9 * 60 + 52, 10 * 60 + 5], foamT: 0, ambT: 1, pausedT: 0, fsdCd: 0, fsd: null,
   });
   clearObstacles();
   initScenery();
@@ -747,6 +992,7 @@ function buildEvents() {
     [5, () => toast('Manager 👔', 'Morning! Standup at 9:30 sharp. Client is joining 🙂')],
     [40, () => hint(isTouch ? '<b>HOP</b> to jump · <b>hold</b> to hover · <b>ROLL</b> in the air' : '<b>SPACE</b> to hop · <b>hold</b> to hover · <b>F</b> barrel roll in the air', 5)],
     [200, () => toast('Family Group 🙏 (247)', 'Good Morning 🌞🌻 Have a blessed Friday. Forwarded as received.')],
+    [610, () => hint(isTouch ? 'Tired of driving? Tap <b>FSD</b> 🤖' : 'Tired of driving? Press <b>G</b> for FSD (Supervised) 🤖', 3.5)],
     [480, () => toast('Amma', 'Did you eat breakfast? Take tiffin. Don\'t drive fast in that flying thing.')],
     [820, () => hint(`Silk Board ahead. <b>Hop + hold ${isTouch ? 'HOP' : 'SPACE'}</b> to fly over the gridlock. Save your cold gas!`, 5)],
     [880, () => toast('Google Maps', 'Silk Board: 47 min delay. Rerouting… Rerouting… Giving up.', true)],
@@ -790,10 +1036,47 @@ function spawnAt(s) {
 //  Update
 // ---------------------------------------------------------------------
 function addSwag(n, why) { game.swag += n; }
-function issueChallan(amount, reason) {
+function issueChallan(amount, reason, quiet = false) {
   game.challans.push({ amount, reason }); AU.ching();
   const tot = game.challans.reduce((a, c) => a + c.amount, 0); ui.challan.textContent = '₹' + tot.toLocaleString('en-IN');
-  toast('Bengaluru Traffic Police 🚓', `e-Challan ₹${amount}: ${reason}`, true);
+  if (!quiet) toast('Bengaluru Traffic Police 🚓', `e-Challan ₹${amount}: ${reason}`, true);
+  ui.challan.classList.remove('bump'); void ui.challan.offsetWidth; ui.challan.classList.add('bump');
+}
+
+// ---------- FSD (Supervised): engages, panics, demands you take over
+const FSD_REASONS = [
+  ['Lane markings not found.', 'Possibly never existed.'],
+  ['Auto indicated left, turned right.', 'Neural net has left the chat.'],
+  ['3 vehicles occupying 1 space.', 'Physics.exe stopped responding.'],
+  ['Route planned. ETA: next Tuesday.', 'Handing control back to you.'],
+  ['FSD has applied for a transfer', 'to the Austin office.'],
+  ['Pedestrian, cow and BMTC bus', 'all have right of way. Simultaneously.'],
+];
+function startFSD() {
+  if (game.fsd) return;
+  if (game.fsdCd > 0) { hint('FSD is recovering from the last attempt. Give it a moment 🙏', 1.8); return; }
+  const near = obstacles.filter(o => o.z < -car.s + 5 && o.z > -car.s - 150);
+  const n = (...k) => near.filter(o => k.includes(o.kind)).length;
+  const counts = { autos: n('auto'), bikes: n('bike'), cars: n('car'), buses: n('bus', 'tanker'), cows: n('cow') };
+  const reason = counts.cows ? ['A cow is making eye contact.', 'Disengaging out of respect 🙏'] : pick(FSD_REASONS);
+  game.fsd = { t: 0, phase: 'engaged', counts, reason };
+  ui.fsd.className = 'engaged'; ui.fsdState.textContent = 'ENGAGED';
+  ui.fsdMsg.innerHTML = 'Scanning Bengaluru<span class="dots"></span>';
+  AU.fsdEngage();
+}
+function updateFSD(dt) {
+  const f = game.fsd; f.t += dt;
+  if (f.phase === 'engaged') {
+    const k = Math.min(1, f.t / 1.1), c = f.counts, r = (v) => Math.round(v * k);
+    ui.fsdDetect.innerHTML = `<b>${r(c.autos)}</b> autos · <b>${r(c.bikes)}</b> two-wheelers · <b>${r(c.cars)}</b> cars · <b>${r(c.buses)}</b> buses · <b>${r(c.cows)}</b> cows · <b class="zero">0</b> lanes`;
+    if (f.t > 1.6) {
+      f.phase = 'takeover'; ui.fsd.className = 'takeover'; ui.fsdState.textContent = 'DISENGAGED';
+      ui.fsdMsg.innerHTML = `<div class="tk">⚠ TAKE OVER IMMEDIATELY</div><div class="why">${f.reason[0]}<br>${f.reason[1]}</div>`;
+      document.body.classList.add('alarm'); AU.fsdAlarm(); car.shake = Math.max(car.shake, 0.12);
+    }
+  } else if (f.t > 4.4) {
+    ui.fsd.className = 'hidden'; document.body.classList.remove('alarm'); game.fsd = null; game.fsdCd = 4;
+  }
 }
 
 function update(dt) {
@@ -802,7 +1085,8 @@ function update(dt) {
   const prevY = car.y;
 
   // ---------- horizontal
-  const steer = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+  let steer = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+  if (game.fsd && game.fsd.phase === 'engaged') steer = Math.sin(game.fsd.t * 8) * 0.7; // the neural net, deciding
   const steerRate = 9 + Math.min(car.speed, 40) * 0.12;
   car.vx = lerp(car.vx, steer * steerRate, 1 - Math.exp(-dt * 8));
   car.x = clamp(car.x + car.vx * dt, -PATH_OUT + 1.05, PATH_OUT - 1.05);
@@ -894,7 +1178,7 @@ function update(dt) {
 
   // ---------- horn
   if (pressed.horn) {
-    game.honks++; AU.horn(1, 0, 0.22);
+    game.honks++; AU.playerHorn();
     let cowNear = false;
     for (const o of obstacles) {
       const dz = -car.s - o.z;
@@ -908,26 +1192,14 @@ function update(dt) {
     if (cowNear && Math.random() < 0.7) { hint('🐄 The cow is unimpressed by your horn.', 2); setTimeout(() => AU.moo(), 300); }
     else if (game.honks === 30) toast('Bengaluru Traffic Police 🚓', 'Honk count: 30. Congratulations, you are now a local.', true);
   }
-  if (pressed.fsd) {
-    if (game.fsdCd <= 0) {
-      game.fsdCd = 6;
-      toast('FSD (Supervised)', pick([
-        'Detected: 41 autos, 3 cows, 0 lanes. Lane logic not found. Please take over 🙏',
-        'Scanning… A cow is making eye contact. Disengaging immediately.',
-        'Route planned. ETA: Tuesday. Handing control back to you.',
-        'Neural net has requested a transfer to the Austin office.',
-      ]), true);
-    }
-  }
+  if (pressed.fsd) startFSD();
+  if (game.fsd) updateFSD(dt);
   game.fsdCd -= dt;
 
   // ---------- ambient Bangalore soundscape
   game.ambT -= dt;
-  if (game.ambT <= 0) {
-    game.ambT = rand(0.35, 1.8) * (st === 1 ? 0.5 : 1);
-    if (Math.random() < 0.08) AU.musicalHorn(rand(-0.8, 0.8));
-    else AU.horn(rand(0.7, 1.5), rand(-0.9, 0.9), rand(0.03, 0.09), rand(0.12, 0.45));
-  }
+  if (game.ambT <= 0) ambientHonks();
+  AU.intensity = st === 1 || game.clock > STANDUP_MIN - 6 ? 1 : 0;
 
   // ---------- foam overlay
   game.foamT -= dt; ui.foam.classList.toggle('on', game.foamT > 0);
@@ -988,7 +1260,7 @@ function updateObstacles(dt, prevY) {
     if (ox <= 0 || oz <= 0) continue;
 
     if (o.kind === 'gate') continue;
-    if (o.kind === 'foam') { if (car.y < 2.6) { if (game.foamT <= 0) { flash('LAKE FOAM!', 'Bellandur says hi'); AU.noiseHit(0.5, 3000, 0.25, 'highpass'); } game.foamT = 1.1; } continue; }
+    if (o.kind === 'foam') { if (car.y < 2.6) { if (game.foamT <= 0) { flash('LAKE FOAM!', 'Bellandur says hi'); AU.whoosh(); } game.foamT = 1.1; } continue; }
     if (o.flat) {
       if (!car.onGround || car.y > 0.3 || o.cleared) continue;
       o.cleared = true;
@@ -1011,6 +1283,7 @@ function updateObstacles(dt, prevY) {
         if (o.kind === 'cow') { game.cowsRespected++; addSwag(150); flash('COW RESPECTED 🙏', '+150 karma'); AU.moo(); }
         else if (o.kind === 'bus' || o.kind === 'tanker') { addSwag(120); if (Math.random() < 0.5) flash('OVER THE ' + (o.kind === 'bus' ? 'BMTC' : 'TANKER') + '!', '+120 swag'); }
         else addSwag(40);
+        if (HORN_OF[o.kind] && Math.random() < 0.35) AU.honk(hornKind(o), clamp((o.x - car.x) / 10, -1, 1), 0.1, 0.15); // they honk at the flying car
       }
       continue;
     }
@@ -1045,12 +1318,12 @@ function onHit(o, hard, impact) {
     flash('YOU BUMPED A COW', 'The cow did not move. The cow will never move. −200 karma', '#ff5a5a');
     return;
   }
-  if (o.kind === 'cop') { issueChallan(2000, 'Nudging an on-duty officer with a ₹2.5 cr car'); flash('SORRY SIR!', 'Very sorry sir. Very very sorry.', '#ff5a5a'); return; }
+  if (o.kind === 'cop') { issueChallan(2000, 'Nudging an on-duty officer', true); flash('SORRY SIR!', 'e-Challan ₹2,000 · Very very sorry sir', '#ff5a5a'); return; }
   if (o.kind === 'pillar') { flash('METRO PILLAR', 'It has been there since 2019. You have not.'); return; }
   if (o.kind === 'barricade') { flash('BARRICADE!', 'Metro work in progress (since forever)'); return; }
   const line = pick(KANNADA_HITS);
   flash(line, o.kind === 'auto' ? 'Auto anna: "Meter mele 50 kodi saar"' : o.kind === 'bus' ? 'BMTC does not brake. BMTC never brakes.' : o.kind === 'bike' ? 'Delivery guy: "Ma\'am, 2 mins away"' : '');
-  if (o.kind === 'auto' || o.kind === 'car' || o.kind === 'bike') setTimeout(() => AU.horn(rand(0.9, 1.3), 0, 0.15, 0.5), 150);
+  if (HORN_OF[o.kind] || o.kind === 'tanker') AU.honk(hornKind(o), clamp((o.x - car.x) / 10, -1, 1), 0.05, 0.15);
 }
 
 function copCheck(o, dz) {
@@ -1126,12 +1399,47 @@ function updateHUD(dt) {
 // ---------------------------------------------------------------------
 //  Flow
 // ---------------------------------------------------------------------
+// Google-Maps-style route card: traffic-coloured line, stops, you-are-here
+const ROUTE_STOPS = [
+  { s: 0, name: 'HSR Layout', note: 'optimism' },
+  { s: 700, name: 'Silk Board', note: '⚠ gridlock' },
+  { s: 1200, name: 'Bellandur', note: 'metro work' },
+  { s: 2050, name: 'Marathahalli', note: 'craters' },
+  { s: TOTAL, name: 'Whitefield', note: '🏁 Gate 3' },
+];
+function renderRoute(el, frac, eta) {
+  el.innerHTML = `<div class="rhead"><span>Navigating to <b>Tech Park · Gate 3</b></span><span class="reta">${eta || 'Maps says <em>47 min</em> · You have 38'}</span></div>
+  <div class="rline"><div class="rdone" style="width:${frac * 100}%"></div>${ROUTE_STOPS.map((st, i) => `<div class="stop${i % 2 ? ' up' : ''}${i === 0 ? ' first' : i === ROUTE_STOPS.length - 1 ? ' last' : ''}" style="left:${st.s / TOTAL * 100}%"><i></i><span>${st.name}<small>${st.note}</small></span></div>`).join('')}${frac > 0 ? `<div class="rcar" style="left:${frac * 100}%"></div>` : ''}</div>`;
+}
+const PRO_TIPS = [
+  'Autos indicate left to turn right. Plan accordingly.',
+  'Hover over cops: challan. Hover over cows: karma. Choose wisely.',
+  'Thrusters and hover share one tank. Save gas for Silk Board.',
+  'If the bus is moving, it has right of way. If it is stopped, it also has right of way.',
+  'Silk Board is not a junction. It is a lifestyle.',
+  'Unmarked speed breakers are free airtime. Courtesy BBMP.',
+  'Barrel rolls only count if you land them.',
+  'Honk to clear two-wheelers. Cows are immune.',
+];
+function fillPause() {
+  const frac = clamp(car.s / TOTAL, 0, 1), km = (frac * 18).toFixed(1);
+  const etaMin = game.clock + (TOTAL - car.s) / 44 / SEC_PER_MIN * 1.1;
+  const late = etaMin > STANDUP_MIN, tot = game.challans.reduce((a, c) => a + c.amount, 0);
+  $('pzStats').innerHTML = `<div><b>${km}<small>km</small></b><span>of 18 km</span></div>
+    <div class="${late ? 'bad' : 'good'}"><b>${fmtClock(etaMin)}</b><span>ETA · ${late ? 'late-ish' : 'on time-ish'}</span></div>
+    <div><b>${Math.round(game.swag).toLocaleString('en-IN')}</b><span>swag</span></div>
+    <div><b>₹${tot.toLocaleString('en-IN')}</b><span>challans</span></div>`;
+  renderRoute($('routePause'), frac, `Now ${fmtClock(game.clock)} · Standup 9:30`);
+  $('pzTip').textContent = pick(PRO_TIPS);
+  syncAudioButtons();
+}
 function setPaused(p) {
   if (state !== 'playing' || paused === p) return;
   paused = p;
+  if (p) fillPause();
   $('pause').classList.toggle('hidden', !p);
   for (const k in keys) keys[k] = false;
-  if (AU.ctx) p ? AU.ctx.suspend() : AU.ctx.resume();
+  AU.setPaused(p);
 }
 function setMode(m) {
   driveMode = m;
@@ -1140,19 +1448,20 @@ function setMode(m) {
   $('modeLbl').textContent = MODES[m].label.toUpperCase();
 }
 function startGame() {
-  AU.init(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume();
+  unlockAudio(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume();
+  AU.setScene('play'); AU.setPaused(false);
   paused = false; $('pause').classList.add('hidden');
   resetGame();
   state = 'playing';
   $('title').classList.add('hidden'); $('over').classList.add('hidden'); $('hud').classList.remove('hidden');
   if (isTouch) $('touch').classList.remove('hidden');
-  ui.toasts.innerHTML = '';
+  ui.toasts.innerHTML = ''; ui.fsd.className = 'hidden'; document.body.classList.remove('alarm');
   flash('0–60 in 0.8s', 'Straight into traffic');
 }
 function endGame(arrived) {
   if (state !== 'playing') return;
   state = 'over';
-  $('touch').classList.add('hidden');
+  $('touch').classList.add('hidden'); ui.fsd.className = 'hidden'; document.body.classList.remove('alarm');
   const late = game.clock - STANDUP_MIN;
   const tot = game.challans.reduce((a, c) => a + c.amount, 0);
   let title, sub;
@@ -1177,16 +1486,20 @@ function endGame(arrived) {
   $('oStats').innerHTML = rows.map(([a, b]) => `<div>${a}</div><div>${b}</div>`).join('');
   setTimeout(() => { $('over').classList.remove('hidden'); $('hud').classList.add('hidden'); }, arrived ? 900 : 200);
   if (arrived) { flash('BADGE IN ✅', fmtClock(game.clock) + ' AM'); AU.stunt(); }
+  AU.setScene('over');
 }
 $('startBtn').addEventListener('click', startGame);
 $('againBtn').addEventListener('click', startGame);
 $('resumeBtn').addEventListener('click', () => setPaused(false));
 $('restartBtn').addEventListener('click', startGame);
 $('pauseBtn').addEventListener('click', () => setPaused(true));
-$('muteBtn').addEventListener('click', () => { AU.setMuted(!AU.muted); $('muteBtn').textContent = AU.muted ? 'SOUND: OFF' : 'SOUND: ON'; });
+document.querySelectorAll('.musicBtn').forEach(b => b.addEventListener('click', () => { unlockAudio(); AU.setMusic(!AU.musicOn); syncAudioButtons(); }));
+document.querySelectorAll('.sfxBtn').forEach(b => b.addEventListener('click', () => { unlockAudio(); AU.setSfx(!AU.sfxOn); syncAudioButtons(); }));
 document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
 document.querySelectorAll('button').forEach(b => b.addEventListener('click', () => b.blur())); // keep SPACE from re-clicking
 setMode(driveMode);
+renderRoute($('routeTitle'), 0);
+syncAudioButtons();
 
 // ---------------------------------------------------------------------
 //  Main loop
@@ -1196,7 +1509,7 @@ let last = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
   let dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (pressed.mute) { AU.setMuted(!AU.muted); $('muteBtn').textContent = AU.muted ? 'SOUND: OFF' : 'SOUND: ON'; }
+  if (pressed.mute) { AU.setMuted(!AU.muted); hint(AU.muted ? '🔇 Muted · M to unmute' : '🔊 Sound on', 1.4); }
   if (state === 'title' || state === 'over') {
     if ((pressed.enter || (pressed.hop && state === 'title')) && !(state === 'over' && $('over').classList.contains('hidden'))) startGame();
     // idle showroom orbit on title
@@ -1209,6 +1522,7 @@ function frame(now) {
       camera.position.set(car.x + Math.sin(a) * 7.5, 2.4, Math.cos(a) * 7.5);
       camera.lookAt(car.x, 0.6, 0);
       carMesh.nimbu.rotation.z = Math.sin(game.t * 3) * 0.2;
+      game.ambT -= dt; if (game.ambT <= 0) { game.ambT = rand(2.5, 6); AU.honk(pick(['car', 'auto', 'bus', 'bike']), rand(-1, 1), rand(0.7, 1)); } // distant city
     } else {
       updateParticles(dt);
     }
@@ -1231,7 +1545,7 @@ requestAnimationFrame(frame);
 
 // debug hook for automated playtesting
 window.__game = {
-  car, game, obstacles: () => obstacles, keys, pressed, startGame, get state() { return state; },
+  car, game, obstacles: () => obstacles, keys, pressed, startGame, setPaused, AU, get state() { return state; },
   // fast-forward the sim: ctl(t) may set keys/pressed each tick
   sim(sec, ctl) { const dt = 1 / 60; for (let t = 0; t < sec && state === 'playing'; t += dt) { ctl && ctl(t); update(dt); syncVisuals(dt); updateParticles(dt); for (const k in pressed) pressed[k] = false; } updateHUD(1); renderer.render(scene, camera); return { s: +car.s.toFixed(1), x: +car.x.toFixed(2), y: +car.y.toFixed(2), speed: +car.speed.toFixed(1), air: +car.air.toFixed(0), clock: fmtClock(game.clock), state, crashes: game.crashes, swag: Math.round(game.swag) }; },
 };

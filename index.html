@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&family=Baloo+2:wght@600;800&family=Noto+Sans+Kannada:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 <div id="app"></div>
@@ -46,13 +46,24 @@
   <div id="toasts"></div>
   <div id="foam"></div>
 
+  <!-- FSD (Supervised) panel -->
+  <div id="fsd" class="hidden">
+    <div class="fsd-top">
+      <svg class="wheel" viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/><path d="M2.8 11h6.7M14.5 11h6.7M12 14.6v6.8" stroke="currentColor" stroke-width="2.2"/></svg>
+      <span class="fsd-name">FSD <small>(Supervised)</small></span><span id="fsdState" class="fsd-state">ENGAGED</span>
+    </div>
+    <div class="fsd-scan"><i></i></div>
+    <div id="fsdDetect" class="fsd-detect"></div>
+    <div id="fsdMsg" class="fsd-msg"></div>
+  </div>
+
   <div class="ticker"><span class="tag">📻 RADIO 98.3</span><div class="tickwrap"><div id="tick"></div></div></div>
-  <div class="keys">←→ steer · <b>SPACE</b> hop (hold = hover) · <b>F</b> barrel roll · <b>W</b> thrust · <b>S</b> brake · <b>H</b> horn · <b>M</b> mute · <b>P</b> pause</div>
+  <div class="keys">←→ steer · <b>SPACE</b> hop (hold = hover) · <b>F</b> barrel roll · <b>W</b> thrust · <b>S</b> brake · <b>H</b> horn · <b>G</b> FSD · <b>M</b> mute · <b>P</b> pause</div>
 </div>
 
 <div id="touch" class="hidden">
   <div class="tl">
-    <button data-k="left">◀</button><button data-k="right">▶</button><button data-k="brake" class="sm">BRAKE</button>
+    <button data-k="left">◀</button><button data-k="right">▶</button><button data-k="brake" class="sm">BRAKE</button><button data-k="fsd" class="sm">FSD</button>
   </div>
   <div class="tr">
     <button data-k="horn" class="sm">HORN</button><button data-k="roll" class="sm">ROLL</button>
@@ -61,32 +72,51 @@
 </div>
 
 <div id="title" class="overlay">
-  <div class="tcard">
-    <div class="brand">T E S L A</div>
+  <div class="tcard tt">
+    <div class="tt-top"><span class="brand">T E S L A</span><span class="chip">DELIVERY DAY</span></div>
     <h1>ROADSTER</h1>
-    <div class="ed">ನಮ್ಮ ಬೆಂಗಳೂರು Edition</div>
-    <p class="pitch">You just took delivery of a ₹2.5 crore car that can <b>fly</b>.<br>You still have to get from HSR Layout to Whitefield by <b>9:30 AM</b> standup.<br>Through <b>Silk Board</b>.</p>
-    <ul class="ctl">
-      <li><b>← →</b> steer (lanes are a suggestion)</li>
-      <li><b>SPACE</b> hop · <b>hold</b> to hover on cold gas</li>
-      <li><b>F</b> barrel roll in the air for swag</li>
-      <li><b>W</b> rear thrusters · <b>S</b> brake · <b>H</b> horn · <b>P</b> pause</li>
-      <li>Fly over cows to show respect. Never hit a cow.</li>
-    </ul>
-    <div class="modes"><div class="lbl">DRIVE MODE</div><div class="seg"><button data-mode="chill">Chill</button><button data-mode="sport">Sport</button><button data-mode="plaid">Plaid</button></div></div>
-    <button id="startBtn">START COMMUTE</button>
-    <div class="fine">Press SPACE / ENTER · Sound on 🔊</div>
+    <div class="truckart"><span>ನಮ್ಮ ಬೆಂಗಳೂರು Edition</span></div>
+    <p class="pitch">₹2.5 crore. It <b>flies</b>. You still have to cross <b>Silk Board</b> by the <b>9:30</b> standup.</p>
+    <div class="specs">
+      <div><b>0.8<small>s</small></b><span>0–60 mph</span></div>
+      <div><b>18<small>km/h</small></b><span>Bengaluru avg</span></div>
+      <div><b>3<small>days</small></b><span>Silk Board wait</span></div>
+    </div>
+    <div class="route" id="routeTitle"></div>
+    <div class="kgrid">
+      <div><kbd>←</kbd><kbd>→</kbd><span>Steer · lanes optional</span></div>
+      <div><kbd class="w">SPACE</kbd><span>Hop · hold to hover</span></div>
+      <div><kbd>F</kbd><span>Barrel roll (airborne)</span></div>
+      <div><kbd>W</kbd><span>Rear thrusters</span></div>
+      <div><kbd>S</kbd><span>Brake (rarely used)</span></div>
+      <div><kbd>H</kbd><span>Horn (mandatory)</span></div>
+      <div><kbd>G</kbd><span>FSD (Supervised) 🙏</span></div>
+      <div><kbd>P</kbd><span>Chai break</span></div>
+    </div>
+    <div class="cta">
+      <button id="startBtn">START COMMUTE</button>
+      <div class="modes"><div class="lbl">DRIVE MODE</div><div class="seg"><button data-mode="chill">Chill</button><button data-mode="sport">Sport</button><button data-mode="plaid">Plaid</button></div></div>
+    </div>
+    <div class="fine">SPACE / ENTER to start · Fly over cows. Never hit a cow. · <button class="linkbtn musicBtn">♫ Music: On</button> <button class="linkbtn sfxBtn">🔊 SFX: On</button></div>
     <div class="fine legal">Fan-made parody. Not affiliated with Tesla, SpaceX, BMTC or any cow.</div>
+  </div>
+  <div class="stickers">
+    <div class="sticker hop">HORN<br>OK<br>PLEASE</div>
+    <div class="sticker nimbu">🍋🌶️<span>Nimbu-mirchi<br>pre-installed</span></div>
+    <div class="sticker cover">Pothole cover<b>NOT INCLUDED</b></div>
   </div>
 </div>
 
 <div id="pause" class="overlay dim hidden">
-  <div class="tcard">
-    <div class="brand">PAUSED</div>
-    <h2>Chai break ☕</h2>
+  <div class="tcard pz">
+    <div class="tt-top"><span class="brand">PAUSED</span><span class="chip warm">CUTTING CHAI · ₹15</span></div>
+    <h2>Chai break <span class="chai">☕</span></h2>
     <div class="ed">Traffic will wait. It always does.</div>
-    <div class="modes"><div class="lbl">DRIVE MODE</div><div class="seg"><button data-mode="chill">Chill</button><button data-mode="sport">Sport</button><button data-mode="plaid">Plaid</button></div></div>
-    <div class="btnrow"><button id="resumeBtn" class="primary">RESUME</button><button id="muteBtn" class="ghost">SOUND: ON</button><button id="restartBtn" class="ghost">RESTART</button></div>
+    <div class="specs" id="pzStats"></div>
+    <div class="route" id="routePause"></div>
+    <div class="tip"><span>BENGALURU PRO TIP</span><p id="pzTip"></p></div>
+    <div class="pz-row"><div class="modes"><div class="lbl">DRIVE MODE</div><div class="seg"><button data-mode="chill">Chill</button><button data-mode="sport">Sport</button><button data-mode="plaid">Plaid</button></div></div><div class="toggles"><button class="ghost sm musicBtn">♫ Music: On</button><button class="ghost sm sfxBtn">🔊 SFX: On</button></div></div>
+    <div class="btnrow"><button id="resumeBtn" class="primary">RESUME</button><button id="restartBtn" class="ghost">RESTART</button></div>
     <div class="fine">P / Esc to resume</div>
   </div>
 </div>
@@ -105,6 +135,6 @@
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
-<script type="module" src="game.js?v=6"></script>
+<script type="module" src="game.js?v=10"></script>
 </body>
 </html>
