@@ -259,62 +259,83 @@ function updateSky(dt) {
 // ---------------------------------------------------------------------
 //  The Roadster
 // ---------------------------------------------------------------------
+// extrude a side profile across the car's width, tapering the upper part inward (tumblehome)
+function wedge(shape, width, taperFrom, taperSpan, taper, bevel) {
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: width, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3 });
+  geo.translate(0, 0, -width / 2);
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) { const k = 1 - taper * clamp((p.getY(i) - taperFrom) / taperSpan, 0, 1); p.setZ(i, p.getZ(i) * k); }
+  geo.computeVertexNormals();
+  return geo;
+}
+function aeroCapTex() { // Cybercab-style flat aero wheel cover
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  g.fillStyle = '#d9dcdf'; g.beginPath(); g.arc(64, 64, 64, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = 'rgba(40,44,50,0.55)'; g.lineWidth = 3;
+  for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; g.beginPath(); g.moveTo(64 + Math.cos(a) * 18, 64 + Math.sin(a) * 18); g.quadraticCurveTo(64 + Math.cos(a + 0.5) * 44, 64 + Math.sin(a + 0.5) * 44, 64 + Math.cos(a + 0.9) * 60, 64 + Math.sin(a + 0.9) * 60); g.stroke(); }
+  g.fillStyle = '#2a2d33'; g.beginPath(); g.arc(64, 64, 12, 0, Math.PI * 2); g.fill();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
 function buildRoadster() {
   const g = new THREE.Group();
-  const white = new THREE.MeshStandardMaterial({ color: 0xf3f3f0, roughness: 0.32, metalness: 0.15 });
-  const glass = new THREE.MeshStandardMaterial({ color: 0x0b0d12, roughness: 0.1, metalness: 0.6 });
-  const dark = new THREE.MeshStandardMaterial({ color: 0x1a1b1e, roughness: 0.6 });
-  const W = 1.95;
-  // body: SR-71 / Esprit wedge side profile (u: front -> back along length)
+  const white = new THREE.MeshStandardMaterial({ color: 0xf4f4f1, roughness: 0.28, metalness: 0.2 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x0a0c11, roughness: 0.08, metalness: 0.7 });
+  const black = new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.55 });
+  const W = 1.98;
+  // body: SR-71 / Esprit wedge — knife nose, hood rising in one line, long flat deck, cut-off tail
   const s = new THREE.Shape();
-  s.moveTo(-2.35, 0.36); s.lineTo(-2.28, 0.52); s.lineTo(-0.75, 0.84); s.lineTo(1.85, 0.98);
-  s.lineTo(2.35, 0.94); s.lineTo(2.38, 0.46); s.lineTo(2.1, 0.24); s.lineTo(-1.95, 0.24); s.closePath();
-  const bg = new THREE.ExtrudeGeometry(s, { depth: W, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.06, bevelSegments: 2 });
-  bg.translate(0, 0, -W / 2);
-  const body = new THREE.Mesh(bg, white); body.rotation.y = -Math.PI / 2; g.add(body);
-  // canopy
+  s.moveTo(-2.42, 0.3); s.lineTo(-2.46, 0.4); s.lineTo(-2.25, 0.48); s.lineTo(-0.85, 0.79); s.lineTo(1.0, 0.92);
+  s.lineTo(2.0, 0.97); s.lineTo(2.44, 0.93); s.lineTo(2.47, 0.56); s.lineTo(2.25, 0.26); s.lineTo(-2.1, 0.24); s.closePath();
+  const body = new THREE.Mesh(wedge(s, W, 0.45, 0.5, 0.16, 0.08), white); body.rotation.y = -Math.PI / 2; g.add(body);
+  // wrap-around canopy
   const c = new THREE.Shape();
-  c.moveTo(-0.85, 0.82); c.lineTo(0.0, 1.24); c.lineTo(0.85, 1.22); c.lineTo(1.75, 0.98); c.closePath();
-  const cg = new THREE.ExtrudeGeometry(c, { depth: 1.36, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 2 });
-  cg.translate(0, 0, -0.68);
-  const canopy = new THREE.Mesh(cg, glass); canopy.rotation.y = -Math.PI / 2; g.add(canopy);
-  // side intakes
-  for (const sx of [-1, 1]) box(g, 0.04, 0.22, 0.9, 0, sx * (W / 2 + 0.07), 0.55, 0.9, dark);
+  c.moveTo(-0.95, 0.74); c.lineTo(-0.1, 1.2); c.lineTo(0.75, 1.24); c.lineTo(1.6, 1.07); c.lineTo(2.05, 0.95); c.lineTo(2.0, 0.86); c.lineTo(-0.95, 0.68); c.closePath();
+  const canopy = new THREE.Mesh(wedge(c, 1.5, 0.8, 0.45, 0.3, 0.05), glass); canopy.rotation.y = -Math.PI / 2; g.add(canopy);
+  // black lower chines, wheel arches, side intakes
+  for (const sx of [-1, 1]) {
+    box(g, 0.06, 0.13, 3.9, 0, sx * 1.08, 0.33, 0.05, black);
+    box(g, 0.03, 0.2, 0.75, 0, sx * 1.06, 0.62, 0.72, black);
+    for (const wz of [-1.45, 1.5]) {
+      const arch = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 6, 18, Math.PI), black);
+      arch.rotation.y = Math.PI / 2; arch.position.set(sx * 1.09, 0.42, wz); g.add(arch);
+    }
+  }
   // wheels with Cybercab-style aero covers
   const tire = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
-  const cap = new THREE.MeshStandardMaterial({ color: 0xd6d9dd, roughness: 0.4, metalness: 0.5 });
+  const cap = new THREE.MeshStandardMaterial({ map: aeroCapTex(), roughness: 0.35, metalness: 0.4 });
   g.wheels = [];
   for (const [x, z] of [[-1, -1.45], [1, -1.45], [-1, 1.5], [1, 1.5]]) {
-    const wg = new THREE.Group(); wg.position.set(x * 1.02, 0.42, z); g.add(wg);
+    const wg = new THREE.Group(); wg.position.set(x * 1.04, 0.42, z); g.add(wg);
     cyl(wg, 0.42, 0.36, 0, 0, 0, 0, 'x', tire);
-    cyl(wg, 0.32, 0.02, 0, x * 0.19, 0, 0, 'x', cap);
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(0.34, 20), cap); disc.position.x = x * 0.185; disc.rotation.y = x * Math.PI / 2; wg.add(disc);
     g.wheels.push(wg);
   }
-  // active rear wing
-  box(g, 1.9, 0.05, 0.38, 0, 0, 1.28, 2.08, white);
-  for (const sx of [-0.6, 0.6]) box(g, 0.06, 0.32, 0.1, 0, sx, 1.1, 2.1, dark);
-  // light bars
-  box(g, 1.75, 0.04, 0.05, 0, 0, 0.53, -2.36, new THREE.MeshBasicMaterial({ color: 0xffffff }));
-  box(g, 1.95, 0.05, 0.05, 0, 0, 0.84, 2.4, new THREE.MeshBasicMaterial({ color: 0xff2a2a }));
-  // rear diffuser
-  box(g, 1.5, 0.16, 0.12, 0, 0, 0.3, 2.36, dark);
-  // 4 SpaceX cold-gas thrusters (small, high on the tail so they don't read as wheels)
+  // nose: splitter + light bar
+  box(g, 1.9, 0.05, 0.4, 0, 0, 0.22, -2.3, black);
+  box(g, 1.7, 0.04, 0.04, 0, 0, 0.44, -2.56, new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  // tail: black fascia, full-width light bar, diffuser
+  box(g, 1.92, 0.3, 0.04, 0, 0, 0.67, 2.56, black);
+  box(g, 1.96, 0.06, 0.05, 0, 0, 0.87, 2.56, new THREE.MeshBasicMaterial({ color: 0xff2a2a }));
+  box(g, 1.6, 0.14, 0.18, 0, 0, 0.3, 2.36, black);
+  // active rear wing with endplates
+  box(g, 2.0, 0.05, 0.42, 0, 0, 1.32, 2.14, white);
+  for (const sx of [-1, 1]) { box(g, 0.04, 0.22, 0.46, 0, sx * 1.0, 1.26, 2.14, black); box(g, 0.05, 0.32, 0.1, 0, sx * 0.55, 1.12, 2.16, black); }
+  // 4 SpaceX cold-gas thrusters in the tail fascia
   g.nozzles = [];
-  for (const [x, y] of [[-0.7, 0.66], [-0.45, 0.66], [0.45, 0.66], [0.7, 0.66]]) {
-    cyl(g, 0.07, 0.18, 0, x, y, 2.42, 'z', new THREE.MeshStandardMaterial({ color: 0x55585e, metalness: 0.8, roughness: 0.3 }));
-    g.nozzles.push(new THREE.Vector3(x, y, 2.6));
+  for (const x of [-0.72, -0.45, 0.45, 0.72]) {
+    cyl(g, 0.07, 0.16, 0, x, 0.66, 2.6, 'z', new THREE.MeshStandardMaterial({ color: 0x55585e, metalness: 0.8, roughness: 0.3 }));
+    g.nozzles.push(new THREE.Vector3(x, 0.66, 2.72));
   }
   // underglow (suction fan) visible when hovering
   const glow = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 5), new THREE.MeshBasicMaterial({ map: radialTex('rgba(150,220,255,1)', 'rgba(150,220,255,0)'), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 }));
   glow.rotation.x = -Math.PI / 2; glow.position.y = 0.05; g.add(glow); g.glow = glow;
-  // marigold garland on the hood, obviously (it was just blessed at the temple)
+  // marigold garland on the hood (it was just blessed at the temple)
   for (let i = 0; i <= 10; i++) {
-    const t = i / 10; const x = (t - 0.5) * 1.6; const z = -1.2 - Math.cos((t - 0.5) * Math.PI) * 0.55;
-    const y = 0.62 + (z + 2.3) * 0.17;
-    sph(g, 0.085, i % 2 ? 0xff8c00 : 0xffb300, x, y + 0.04, z);
+    const t = i / 10, x = (t - 0.5) * 1.3, z = -1.3 - Math.cos((t - 0.5) * Math.PI) * 0.4;
+    sph(g, 0.065, i % 2 ? 0xff8c00 : 0xffb300, x, 0.5 + (z + 2.25) / 1.4 * 0.31 + 0.06, z);
   }
-  // nimbu-mirchi hanging from the front bumper
-  const nm = new THREE.Group(); nm.position.set(0.35, 0.42, -2.42); g.add(nm); g.nimbu = nm;
+  // nimbu-mirchi hanging from the nose
+  const nm = new THREE.Group(); nm.position.set(0.35, 0.36, -2.56); g.add(nm); g.nimbu = nm;
   box(nm, 0.012, 0.22, 0.012, 0x111111, 0, -0.11, 0);
   sph(nm, 0.07, 0xf6e13a, 0, -0.26, 0, 1, 1.15, 1);
   for (let i = 0; i < 4; i++) { const ch = cyl(nm, 0.025, 0.2, 0x1f9d3a, 0, -0.43 - i * 0.12, 0); ch.scale.set(0.03, 0.12, 0.03); ch.position.y = -0.4 - i * 0.07; }
@@ -322,10 +343,12 @@ function buildRoadster() {
 }
 const carMesh = buildRoadster();
 scene.add(carMesh);
-const carShadow = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 6), new THREE.MeshBasicMaterial({ map: SHADOW_TEX, transparent: true, depthWrite: false }));
+// flat decals get a depth offset so they never z-fight with the road (that was the flicker)
+const DECAL = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
+const carShadow = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 6), new THREE.MeshBasicMaterial({ map: SHADOW_TEX, transparent: true, depthWrite: false, ...DECAL }));
 carShadow.rotation.x = -Math.PI / 2; scene.add(carShadow);
 // tight dark contact shadow that only shows when the wheels are on the ground
-const carContact = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 5), new THREE.MeshBasicMaterial({ map: radialTex('rgba(0,0,0,0.9)', 'rgba(0,0,0,0)'), transparent: true, depthWrite: false }));
+const carContact = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 5), new THREE.MeshBasicMaterial({ map: radialTex('rgba(0,0,0,0.9)', 'rgba(0,0,0,0)'), transparent: true, depthWrite: false, ...DECAL }));
 carContact.rotation.x = -Math.PI / 2; scene.add(carContact);
 
 // ---------------------------------------------------------------------
@@ -335,7 +358,7 @@ const AUTO_SLOGANS = ['Appa Amma\nBlessings', 'Sound Horn', 'Don\'t Kiss Me', 'M
 const CAR_COLORS = [0xffffff, 0xc0c4c8, 0x9e1b1b, 0x274b8a, 0x2e2e2e, 0xd9d2c0, 0x6b2f86];
 
 function shadowUnder(g, w, d) {
-  const sh = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.4, d * 1.25), new THREE.MeshBasicMaterial({ map: SHADOW_TEX, transparent: true, depthWrite: false }));
+  const sh = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.4, d * 1.25), new THREE.MeshBasicMaterial({ map: SHADOW_TEX, transparent: true, depthWrite: false, ...DECAL }));
   sh.rotation.x = -Math.PI / 2; sh.position.y = 0.03; g.add(sh);
 }
 function wheels(g, w, z1, z2, r = 0.32) {
@@ -431,9 +454,9 @@ const BUILDERS = {
   pothole() {
     const g = new THREE.Group();
     const r = rand(0.8, 1.6);
-    const m = new THREE.Mesh(new THREE.CircleGeometry(r, 9), new THREE.MeshLambertMaterial({ color: 0x232325 }));
+    const m = new THREE.Mesh(new THREE.CircleGeometry(r, 9), new THREE.MeshLambertMaterial({ color: 0x232325, ...DECAL }));
     m.rotation.x = -Math.PI / 2; m.position.y = 0.02; m.scale.set(1, rand(0.6, 1), 1); g.add(m);
-    const w = new THREE.Mesh(new THREE.CircleGeometry(r * 0.7, 7), new THREE.MeshLambertMaterial({ color: 0x6a5a3a, transparent: true, opacity: 0.6 }));
+    const w = new THREE.Mesh(new THREE.CircleGeometry(r * 0.7, 7), new THREE.MeshLambertMaterial({ color: 0x6a5a3a, transparent: true, opacity: 0.6, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }));
     w.rotation.x = -Math.PI / 2; w.position.y = 0.03; g.add(w);
     return { mesh: g, w: r * 1.6, d: r * 1.6, h: 0, vz: 0, kind: 'pothole', flat: true };
   },
@@ -1059,7 +1082,7 @@ const game = {};
 function resetGame() {
   Object.assign(car, { x: -3, y: 0, s: 0, vy: 0, vx: 0, speed: 0, air: 100, onGround: true, roll: 0, rolling: false, hopHeld: 0, hoverArmed: false, thrust: 0, support: null, shake: 0, crashCd: 0, tilt: 0, pitch: 0 });
   Object.assign(game, {
-    clock: START_MIN, t: 0, swag: 0, challans: [], cowsRespected: 0, cowsHit: 0, potholes: 0, crashes: 0, honks: 0, rolls: 0, surf: 0, hops: 0,
+    clock: START_MIN, t: 0, swag: 0, challans: [], cowsRespected: 0, cowsHit: 0, potholes: 0, crashes: 0, honks: 0, rolls: 0, roofHops: 0, hops: 0,
     stage: -1, nextSpawn: 135, events: buildEvents(), lateMsgs: [9 * 60 + 31, 9 * 60 + 40, 9 * 60 + 52, 10 * 60 + 5], foamT: 0, ambT: 1, pausedT: 0, fsdCd: 0, fsd: null,
   });
   clearObstacles();
@@ -1259,18 +1282,22 @@ function update(dt) {
       if (prevY >= o.h - 0.15 && o.h > support) { support = o.h; supportObj = o; }
     }
   }
-  if (car.y <= support) {
+  if (supportObj && car.y <= support) {
+    // never park on vehicles (it reads as a stuck hover): bounce off the roof instead
+    car.y = support; car.vy = Math.max(7.5, Math.sqrt(2 * GRAV * (3.8 - support))); car.onGround = false; car.support = null; // clears a bus
+    car.speed = Math.max(car.speed, cruise() * 0.6); // and always moves you forward
+    game.roofHops++; addSwag(30); AU.thud(); car.shake = Math.max(car.shake, 0.1);
+    if (game.roofHops === 1 || Math.random() < 0.2) flash('ROOF HOP!', pick(['Namma style', 'Sorry uncle!', 'Using the BMTC as a trampoline']));
+  } else if (car.y <= support) {
     if (!car.onGround) {
       // landing
       if (car.rolling) { car.rolling = false; car.roll = 0; car.speed *= 0.45; car.shake = 0.4; AU.crash(); flash('SKETCHY LANDING', pick(['Bhai ye kya tha?', 'Chassis says ouch', 'Saar, insurance claim?'])); }
       else if (car.vy < -6) { AU.land(); car.shake = Math.max(car.shake, 0.15); for (let i = 0; i < 8; i++) puff(new THREE.Vector3(car.x + rand(-1.5, 1.5), support + 0.2, -car.s + rand(-2, 2)), new THREE.Vector3(rand(-3, 3), rand(0.5, 2), rand(-1, 3)), 0.8, 0.8, 2.5, 0xc9a77c, 0.5); }
-      if (supportObj && !car.support) { flash(supportObj.kind === 'bus' ? 'BUS SURFING!' : 'ROOF PARKING!', 'Namma style'); }
     }
-    car.y = support; car.vy = 0; car.onGround = true; car.support = supportObj;
+    car.y = support; car.vy = 0; car.onGround = true; car.support = null;
   } else if (car.y > support + 0.05) {
     car.onGround = false; car.support = null;
   }
-  if (car.support) { game.surf += dt; addSwag(80 * dt); }
 
   // ---------- air regen
   if (car.onGround && !thrust) car.air = Math.min(100, car.air + AIR_REGEN * dt);
@@ -1575,7 +1602,7 @@ function endGame(arrived) {
     ['Barrel rolls', game.rolls],
     ['Potholes found', game.potholes],
     ['Crashes', game.crashes],
-    ['Bus-surfing time', game.surf.toFixed(1) + 's'],
+    ['Roof hops', game.roofHops],
     ['Honks', game.honks],
     ['Challans', '₹' + tot.toLocaleString('en-IN') + (game.challans.length ? ` (${game.challans.length})` : '')],
   ];
@@ -1613,7 +1640,7 @@ function frame(now) {
       game.t += dt;
       const a = game.t * 0.25;
       carMesh.position.set(car.x, 0, 0); carMesh.rotation.set(0, 0, 0);
-      carShadow.position.set(car.x, 0.02, 0);
+      carShadow.position.set(car.x, 0.02, 0); carContact.position.set(car.x, 0.025, 0); carContact.material.opacity = 1;
       for (const m of [road, ...paths, ...curbs, earth]) m.position.z = -100;
       camera.position.set(car.x + Math.sin(a) * 7.5, 2.4, Math.cos(a) * 7.5);
       camera.lookAt(car.x, 0.6, 0);
@@ -1670,7 +1697,7 @@ function setupOgCard() {
   }
   // the Roadster, mid-flip
   st.add(carMesh); carMesh.rotation.order = 'YXZ';
-  carMesh.position.set(5.8, 7.2, 2.5); carMesh.rotation.set(2.6, -Math.PI / 2, 0.5); carMesh.scale.setScalar(1.5);
+  carMesh.position.set(5.4, 6.8, 3); carMesh.rotation.set(0.42, -Math.PI / 2 + 0.55, -0.55); carMesh.scale.setScalar(1.55); // nose-up, banked toward camera
   const carKey = new THREE.DirectionalLight(0xffffff, 1.2); carKey.position.set(4, 4, 20); st.add(carKey);
   carMesh.glow.material.opacity = 0; carMesh.updateMatrixWorld(true);
   const puffAt = (p, sc, op) => {
@@ -1678,7 +1705,7 @@ function setupOgCard() {
     sp.scale.set(sc, sc, 1); sp.position.copy(p); st.add(sp);
   };
   for (let i = 0; i < 80; i++) { // vapour arc from the launch point up to the car
-    const t = i / 79, px = lerp(-19, 3.4, t), py = 0.6 + 7.0 * (1 - (1 - t) * (1 - t));
+    const t = i / 79, px = lerp(-19, 3.0, t), py = 0.6 + 6.0 * (1 - (1 - t) * (1 - t));
     puffAt(new THREE.Vector3(px + rand(-0.4, 0.4), py + rand(-0.35, 0.35), rand(-0.6, 0.6)), lerp(3.6, 1.5, t) * rand(0.8, 1.3), (0.18 + 0.45 * t) * rand(0.6, 1));
   }
   for (const n of carMesh.nozzles) for (let i = 0; i < 4; i++) { const p = n.clone(); carMesh.localToWorld(p); p.add(new THREE.Vector3(rand(-0.8, 0.2), rand(-0.3, 0.6), rand(-0.4, 0.4))); puffAt(p, rand(0.9, 1.8), 0.7); }

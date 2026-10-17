@@ -15,6 +15,8 @@ A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layou
 ## Conventions
 - World: forward is **-Z**. `car.s` is distance travelled; the car's world z is `-car.s`. Obstacles store `x`, `z`, `w`, `d`, `h`, `vz` (forward speed). Collision is an AABB in x/z plus a height check (`car.y >= o.h` means you're above it).
 - Tuning knobs at the top of `game.js`: `MODES` (Chill/Sport/Plaid cruise speeds), `SEC_PER_MIN` (clock difficulty; the clock scales with mode), `STAGES` / `STAGE_CFG` (route and traffic mix), plus hop, hover and gas constants.
+- The car must never rest on a vehicle roof: from the chase cam it looks like a stuck hover. Landing on a roof triggers a bounce (`ROOF HOP`) that clears a bus and pushes the car forward.
+- Flat decals (shadows, potholes) use the `DECAL` polygon-offset material options. Without them they z-fight with the road and flicker.
 - Messaging channels, one per event, never both:
   - `flash()`: centre text for on-road events (crashes, stunts).
   - `toast()`: phone notifications (WhatsApp, e-challan SMS).
