@@ -260,13 +260,13 @@ svg text{font-family:-apple-system,'SF Pro Display',sans-serif}
     <g stroke="#8b93a1" stroke-width="2.5" fill="none">
       <path d="M190 158 L298 158" marker-end="url(#a4)"/>
       <path d="M500 145 L618 145" marker-end="url(#a4)"/><path d="M620 172 L502 172" marker-end="url(#a4)"/>
-      <path d="M400 196 L400 328" marker-end="url(#a4)"/>
-      <path d="M300 368 C 120 368, 95 280, 95 198" marker-end="url(#a4)"/>
+      <path d="M370 196 L370 328" marker-end="url(#a4)"/>
+      <path d="M430 330 L430 198" marker-end="url(#a4)"/>
       <path d="M95 120 C 95 40, 500 38, 878 38" stroke="#5ad1ff" stroke-dasharray="6 6" marker-end="url(#a4)"/>
     </g>
     <text x="244" y="148" fill="#8b93a1" font-size="17" text-anchor="middle">Enter</text>
     <text x="559" y="135" fill="#8b93a1" font-size="17" text-anchor="middle">P</text>
-    <text x="414" y="270" fill="#8b93a1" font-size="17">arrive / give up</text>
+    <text x="356" y="268" fill="#8b93a1" font-size="17" text-anchor="end">arrive, or clock hits 10:15</text><text x="444" y="268" fill="#8b93a1" font-size="17">Enter · drive again</text>
     <text x="1000" y="105" fill="#8b93a1" font-size="17" text-anchor="middle">a modal on top</text>
     <g data-step="1">
       <path d="M760 120 C 790 70, 830 50, 878 50" stroke="#ff4d5e" stroke-width="3.5" fill="none" marker-end="url(#a4)"/>
@@ -286,9 +286,10 @@ svg text{font-family:-apple-system,'SF Pro Display',sans-serif}
     <div><span class="blu">&gt;</span> __game.car</div>
     <div class="mu">  {s: 535.6, x: -3, y: 0, vy: 0, speed: 34, air: 100, onGround: true}</div>
     <div style="height:10px"></div>
-    <div data-step="1"><span class="blu">&gt;</span> <span class="k">let</span> t0 = performance.<span class="f">now</span>(); __game.<span class="f">sim</span>(<span class="n">900</span>, bot); performance.<span class="f">now</span>() - t0</div>
+    <div data-step="1"><span class="blu">&gt;</span> <span class="k">let</span> t0 = performance.<span class="f">now</span>(); __game.<span class="f">sim</span>(<span class="n">900</span>, bot)</div>
     <div data-step="1" class="mu">  {s: 3300.1, clock: <span class="grn">"9:30"</span>, state: "over", crashes: 10, swag: 1580}</div>
-    <div data-step="1" class="acc">  236 ms</div>
+    <div data-step="1"><span class="blu">&gt;</span> performance.<span class="f">now</span>() - t0</div>
+    <div data-step="1" class="acc">  236</div>
   </div>
   <p data-step="0" class="mu" style="margin-top:22px">Like exposing your Redux store for DevTools.</p>
   <p data-step="1" style="margin-top:6px">sim() = fixed 1/60 s steps, no drawing. A bot drives all 3.3 km in a quarter-second.</p>

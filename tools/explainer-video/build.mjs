@@ -55,8 +55,8 @@ const horn = '/Users/varuntorka/Coding/Misc-Experiments/roadster-bengaluru/audio
 ff(['-i', SEG + 'video.mp4', '-i', SEG + 'voice.wav', '-i', horn + 'roadster-horn.mp3', '-i', horn + 'taxi-horn.mp3',
   '-filter_complex',
   `[1]loudnorm=I=-16:TP=-1.5:LRA=11[vo];` +
-  `[2]volume=0.35,adelay=3000[h1];` +
-  `[3]volume=0.3,adelay=${Math.round((outro + beats.find(b => b.id === 'outro-1').segDur - 1.6) * 1000)}[h2];` +
+  `[2]volume=0.35,adelay=3000:all=1[h1];` +
+  `[3]volume=0.3,adelay=${Math.round((outro + beats.find(b => b.id === 'outro-1').segDur - 1.6) * 1000)}:all=1[h2];` +
   `[vo][h1][h2]amix=inputs=3:normalize=0:duration=first[a]`,
   '-map', '0:v', '-map', '[a]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', OUTFILE]);
 console.log('done', OUTFILE, total.toFixed(1) + 's');
