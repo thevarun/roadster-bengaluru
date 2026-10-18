@@ -1,0 +1,61 @@
+{
+  "title": "How a Flying Roadster Game Works",
+  "scenes": [
+    { "id": "open", "beats": [
+      { "v": "clip:hook", "t": "This is a Tesla Roadster, hovering over Silk Board junction at nine in the morning, on cold-gas thrusters." },
+      { "v": "clip:hook", "t": "It's a silly game. But under the jokes is a real little game engine. In the next few minutes, I'll show you how it works." },
+      { "v": "slide:title/0", "t": "You already know how to build web apps. Almost every idea here maps onto something you've built before. Let's go." }
+    ]},
+    { "id": "loop", "beats": [
+      { "v": "slide:loop/0", "t": "Idea one. A web app waits. Nothing happens until somebody clicks. A game never waits." },
+      { "v": "slide:loop/1", "t": "Sixty times a second, the browser calls one function. It reads the keyboard, updates the world, and draws a picture. That's it. That's the whole trick." },
+      { "v": "slide:loopcode/0", "t": "Here it is in game dot j s. The function is called frame, and the first thing it does is ask the browser to call it again next time." },
+      { "v": "slide:loopcode/1", "t": "Now look at d t. Delta time: the seconds since the last frame. Everything moves by speed times d t, so the game runs the same on a sixty hertz laptop and a hundred and twenty hertz phone." },
+      { "v": "slide:loopcode/2", "t": "And that Math dot min, with zero point zero five? Switch tabs for ten seconds, and the next d t would be ten. Your car would teleport straight through a bus. So we clamp it. One line, one bug prevented." }
+    ]},
+    { "id": "scene", "beats": [
+      { "v": "slide:graph/0", "t": "Idea two. What does draw a picture actually mean? We use a library called three dot j s. Think of it as a DOM, but for 3D." },
+      { "v": "slide:graph/1", "t": "A scene is a tree of objects. Each object is a mesh: a shape, called geometry, plus a look, called material. A camera decides what you see, and the renderer turns all of it into pixels." },
+      { "v": "clip:wire", "t": "There are no 3D model files in this game. Let's switch on wireframe." },
+      { "v": "clip:wire", "t": "Everything is boxes, cylinders and spheres, stretched and stacked in code. Even the cow. Nothing to download, and very cheap to draw." }
+    ]},
+    { "id": "stream", "beats": [
+      { "v": "clip:overhead", "t": "Idea three. The route is three point three kilometres long, and we never build all of it. Let's look from above." },
+      { "v": "clip:overhead", "t": "The road is a single strip that travels with the car, while its texture scrolls backwards. It's a treadmill. The belt moves, and you never fall off the end." },
+      { "v": "clip:overhead", "t": "Traffic is streamed. Anything closer than two hundred and thirty metres ahead gets spawned. Anything thirty metres behind gets deleted, and its memory freed." },
+      { "v": "slide:virtual/0", "t": "If you've ever used a virtualized list in React, where only the rows on screen actually exist, this is exactly that. A hundred-odd objects are alive at any moment, instead of the whole city." }
+    ]},
+    { "id": "physics", "beats": [
+      { "v": "slide:physics/0", "t": "Idea four. Physics sounds scary. Here, it's a few numbers, updated every frame." },
+      { "v": "clip:physics", "t": "Gravity pulls the upward speed down by thirty, every second. That speed changes the height. Pressing space gives a kick of eleven point five. Holding it fires the thrusters." },
+      { "v": "clip:physics", "t": "And the thrusters burn cold gas. That gas meter is the core design decision in the game. Hop, hover and boost all drink from one tank, and it only refills on the ground. So every jump is a choice." }
+    ]},
+    { "id": "collide", "beats": [
+      { "v": "clip:boxes", "t": "Idea five: collisions. Every vehicle carries an invisible box. Here they are." },
+      { "v": "slide:aabb/0", "t": "Every frame, we ask: does the car's box overlap the bus's box, sideways, and lengthways? It's the same maths as checking whether two rectangles on a web page intersect. Game devs call it A A B B: axis-aligned bounding box." },
+      { "v": "slide:aabb/1", "t": "If they overlap, we check height. Higher than the roof? You cleared it. Collect some swag. Lower? That's a crash." },
+      { "v": "clip:roofhop", "t": "Two design fixes live right here. Landing on a roof used to park you on top of it, which looked exactly like a stuck hover bug. So now roofs bounce you forward. Roof hop." },
+      { "v": "slide:aabb/2", "t": "And getting stuck behind a bus used to re-trigger the crash shake every single frame. Very dizzying. Now, gentle bumps count as tailgating, and each object has a short cooldown that keeps refreshing while you're touching it." }
+    ]},
+    { "id": "juice", "beats": [
+      { "v": "clip:crash", "t": "Idea six is game feel, which designers call juice. A crash isn't one thing. It's a camera shake, a sound, a line of text, and a puff of dust, all fired by the same event." },
+      { "v": "slide:channels/0", "t": "We also keep one message channel per kind of event. A big flash for things on the road, a phone notification for e-challans and WhatsApps, and a small pill for tips. Never two at once, or the screen turns into noise." }
+    ]},
+    { "id": "audio", "beats": [
+      { "v": "slide:audio/0", "t": "Idea seven. Sound in the browser is plumbing. Web Audio connects nodes like pipes: a horn recording flows into a panner, then into a shared effects bus, a compressor, and the master volume." },
+      { "v": "slide:audio/1", "t": "The rule is: everything flows through the effects bus. We once had a reverb that skipped it, so even with sound switched off, you could hear a faint echo. One pipe in the wrong place." }
+    ]},
+    { "id": "states", "beats": [
+      { "v": "slide:states/0", "t": "Idea eight. The game is always in exactly one state. Title, playing, paused, or over. The showroom sits on top, like a modal." },
+      { "v": "slide:states/1", "t": "Bugs love the edges between states. Open the showroom from the pause menu, and the horn test was silent, because pausing had muted the effects bus. The fix: the showroom sets its own sound state on the way in, and restores the old one on the way out." }
+    ]},
+    { "id": "debug", "beats": [
+      { "v": "slide:debug/0", "t": "Last idea. Make your game easy to poke at. game dot j s puts a debug object on window, the way you might expose a Redux store." },
+      { "v": "slide:debug/1", "t": "Its sim function fast-forwards the game in fixed sixtieth-of-a-second steps, with nothing drawn. A tiny bot drives the entire three point three kilometres in about a quarter of a second. That's how we tuned the clock, so arriving at nine thirty is tight, but fair." }
+    ]},
+    { "id": "outro", "beats": [
+      { "v": "slide:recap/0", "t": "So. A loop that never waits. A tree of simple shapes. A treadmill and a virtual list. A few numbers of physics. Overlapping boxes. Juice. Plumbing. States. And a debug hook." },
+      { "v": "slide:end/0", "t": "Open game dot j s, find the frame function, and follow one frame all the way through. Then go beat the nine thirty standup." }
+    ]}
+  ]
+}

@@ -1,0 +1,334 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>slides</title>
+<style>
+:root{--bg:#0b0d12;--panel:#151922;--line:#262c38;--tx:#f2f4f7;--mu:#8b93a1;--acc:#f5a623;--red:#ff4d5e;--grn:#7CFC9A;--blu:#5ad1ff;--yel:#ffd23f}
+*{box-sizing:border-box;margin:0}
+html,body{width:1280px;height:720px;overflow:hidden;background:var(--bg);color:var(--tx);font-family:-apple-system,'SF Pro Display','Helvetica Neue',sans-serif}
+section{display:none;position:absolute;inset:0;padding:56px 72px}
+section.on{display:block}
+.chip{display:inline-block;font:700 15px/1 -apple-system,sans-serif;letter-spacing:.18em;color:var(--acc);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:300;font-size:50px;letter-spacing:-.01em;line-height:1.1}
+h1 b{font-weight:700}
+h2{font-weight:600;font-size:26px;margin-bottom:10px}
+p,li{font-size:23px;line-height:1.4;color:#d5dae2}
+.mu{color:var(--mu)} .acc{color:var(--acc)} .red{color:var(--red)} .grn{color:var(--grn)} .blu{color:var(--blu)} .yel{color:var(--yel)}
+.foot{position:absolute;left:72px;bottom:30px;font-size:15px;color:#5b6270;letter-spacing:.08em}
+[data-step]{transition:none}
+.hide{opacity:0}
+.dim{opacity:.28}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px 28px}
+.row{display:flex;gap:28px}
+.col{flex:1}
+code,.code{font-family:'SF Mono',Menlo,monospace}
+.code{background:#0f1218;border:1px solid var(--line);border-radius:16px;padding:20px 0;font-size:21px;line-height:1.62}
+.code div{padding:0 26px;white-space:pre;color:#c9d1dc}
+.code div i{font-style:normal;color:#4d5564;display:inline-block;width:64px}
+.code div.hl{background:rgba(245,166,35,.13);box-shadow:inset 4px 0 0 var(--acc)}
+.code .k{color:#ff8fb1}.code .f{color:#7fd3ff}.code .n{color:#ffd23f}.code .c{color:#6b7484}
+.callout{border-left:4px solid var(--acc);padding:6px 0 6px 20px;font-size:23px;color:#e8ebf0}
+.pill{display:inline-block;padding:7px 14px;border-radius:999px;background:#1f2430;font-size:19px;margin:4px 6px 4px 0}
+.big{font-size:84px;font-weight:200;line-height:1}
+svg text{font-family:-apple-system,'SF Pro Display',sans-serif}
+</style></head>
+<body>
+
+<!-- TITLE -->
+<section data-id="title">
+  <div style="position:absolute;inset:0;background:url(../../_screenshots/gameplay.jpg) center/cover;opacity:.32"></div>
+  <div style="position:absolute;inset:0;background:linear-gradient(90deg,#0b0d12 30%,rgba(11,13,18,.2))"></div>
+  <div style="position:relative;margin-top:150px">
+    <div class="chip">Roadster: Namma Bengaluru · under the hood</div>
+    <h1 style="font-size:72px">How a flying-car<br><b>game actually works</b></h1>
+    <p style="margin-top:26px;font-size:27px" class="mu">Nine ideas, explained for web developers.</p>
+  </div>
+</section>
+
+<!-- LOOP -->
+<section data-id="loop">
+  <div class="chip">Idea 1 / 9 · The game loop</div>
+  <h1>A web app <b>waits</b>. A game <b class="acc">never waits</b>.</h1>
+  <div class="row" style="margin-top:44px">
+    <div class="card col">
+      <h2 class="mu">Web app</h2>
+      <p style="font-size:26px;margin-top:20px">click → handler → update DOM</p>
+      <p class="mu" style="margin-top:22px">…then nothing, until the next event.</p>
+      <div style="font-size:70px;margin-top:40px;opacity:.6">💤</div>
+    </div>
+    <div class="card col" style="border-color:#5a4520">
+      <h2 class="acc">Game</h2>
+      <p style="font-size:26px;margin-top:20px" data-step="0">every frame, whether anything happened or not</p>
+      <svg data-step="1" width="520" height="250" viewBox="0 0 520 250" style="margin-top:6px">
+        <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#f5a623"/></marker></defs>
+        <circle cx="260" cy="125" r="92" fill="none" stroke="#2c3240" stroke-width="2"/>
+        <path d="M 200 55 A 92 92 0 0 1 340 72" fill="none" stroke="#f5a623" stroke-width="3" marker-end="url(#ar)"/>
+        <path d="M 352 150 A 92 92 0 0 1 250 216" fill="none" stroke="#f5a623" stroke-width="3" marker-end="url(#ar)"/>
+        <path d="M 180 175 A 92 92 0 0 1 172 95" fill="none" stroke="#f5a623" stroke-width="3" marker-end="url(#ar)"/>
+        <text x="260" y="118" text-anchor="middle" fill="#f2f4f7" font-size="34" font-weight="200">60×</text>
+        <text x="260" y="146" text-anchor="middle" fill="#8b93a1" font-size="17">per second · 16.7 ms</text>
+        <text x="96" y="70" text-anchor="middle" fill="#f2f4f7" font-size="22" font-weight="600">1 · Input</text>
+        <text x="440" y="122" text-anchor="middle" fill="#f2f4f7" font-size="22" font-weight="600">2 · Update</text>
+        <text x="116" y="232" text-anchor="middle" fill="#f2f4f7" font-size="22" font-weight="600">3 · Render</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- LOOP CODE -->
+<section data-id="loopcode">
+  <div class="chip">Idea 1 / 9 · The game loop · game.js</div>
+  <div class="row" style="margin-top:8px;align-items:flex-start">
+    <div class="code" style="flex:1.45">
+      <div data-hl="0"><i>1905</i><span class="k">function</span> <span class="f">frame</span>(now) {</div>
+      <div data-hl="0"><i>1906</i>  <span class="f">requestAnimationFrame</span>(frame);   <span class="c">// call me again</span></div>
+      <div data-hl="1,2"><i>1908</i>  <span class="k">let</span> dt = Math.<span class="f">min</span>(<span class="n">0.05</span>, (now - last) / <span class="n">1000</span>);</div>
+      <div><i>    </i>  <span class="c">…</span></div>
+      <div><i>1933</i>      <span class="f">update</span>(dt);        <span class="c">// move the world</span></div>
+      <div><i>1934</i>      <span class="f">syncVisuals</span>(dt);   <span class="c">// meshes follow data</span></div>
+      <div><i>    </i>  <span class="c">…</span></div>
+      <div><i>1941</i>  renderer.<span class="f">render</span>(scene, camera); <span class="c">// draw</span></div>
+      <div><i>    </i>}</div>
+      <div style="height:14px"></div>
+      <div data-hl="1" data-step="1"><i>1371</i>car.s += car.speed * dt;   <span class="c">// speed × time</span></div>
+    </div>
+    <div style="flex:1;padding-top:6px">
+      <div data-step="0" class="callout" style="margin-bottom:26px"><b>requestAnimationFrame</b><br><span class="mu">The browser calls you before each screen refresh.</span></div>
+      <div data-step="1" class="callout" style="margin-bottom:26px"><b>dt</b> = seconds since last frame<br><span class="mu">60 Hz → 0.0167 · 120 Hz → 0.0083<br>Same speed on every screen.</span></div>
+      <div data-step="2" class="callout" style="border-color:var(--red)"><b>The clamp</b><br><span class="mu">Tab away for 10 s → dt = 10 → car teleports 340 m, through a bus.</span><br><span class="acc">Math.min caps it at 0.05 s.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- SCENE GRAPH -->
+<section data-id="graph">
+  <div class="chip">Idea 2 / 9 · The scene graph · three.js</div>
+  <h1>three.js is a <b>DOM for 3D</b></h1>
+  <div class="row" style="margin-top:36px">
+    <div class="card col" data-step="0">
+      <h2 class="mu">The DOM you know</h2>
+      <div class="code" style="border:0;background:none;padding:6px 0;font-size:21px">
+<div>document</div><div>└─ div.card</div><div>   ├─ img</div><div>   └─ span</div></div>
+    </div>
+    <div class="card col" data-step="0" style="flex:1.25">
+      <h2 class="acc">The scene in game.js</h2>
+      <div class="code" style="border:0;background:none;padding:6px 0;font-size:21px">
+<div>scene</div><div>├─ road  <span class="c">(one long strip)</span></div><div>├─ carMesh <span class="c">(group)</span></div><div>│  ├─ body · wheels · nozzles</div><div>├─ bus, auto, cow … <span class="c">(traffic)</span></div><div>└─ buildings, trees, sky</div></div>
+    </div>
+  </div>
+  <div class="row" data-step="1" style="margin-top:26px;align-items:center;font-size:24px">
+    <span class="pill" style="font-size:22px">Mesh = <b class="blu">Geometry</b> (shape) + <b class="acc">Material</b> (look)</span>
+    <span class="pill" style="font-size:22px"><b>Camera</b> = what you see</span>
+    <span class="pill" style="font-size:22px"><b>Renderer</b> → pixels</span>
+  </div>
+</section>
+
+<!-- VIRTUAL LIST -->
+<section data-id="virtual">
+  <div class="chip">Idea 3 / 9 · Streaming the world</div>
+  <h1>It's a <b>virtualized list</b>, but for a city</h1>
+  <div class="row" style="margin-top:34px">
+    <div class="card col">
+      <h2 class="mu">react-window</h2>
+      <p>Only rows inside the viewport exist in the DOM. Scroll, and rows are created ahead and destroyed behind.</p>
+    </div>
+    <div class="card col" style="border-color:#5a4520">
+      <h2 class="acc">The road</h2>
+      <p>Only traffic within <b class="grn">230 m ahead</b> exists. Pass it by <b class="red">30 m</b>, and it's deleted, memory freed.</p>
+    </div>
+  </div>
+  <div class="code" style="margin-top:26px;font-size:19px">
+    <div><i>1484</i><span class="k">while</span> (game.nextSpawn &lt; car.s + <span class="n">230</span>) <span class="f">spawnAt</span>(game.nextSpawn) …</div>
+    <div><i>1487</i><span class="k">if</span> (o.z &gt; -car.s + <span class="n">30</span>) { scene.<span class="f">remove</span>(o.mesh); <span class="f">disposeObj</span>(o.mesh); … }</div>
+  </div>
+</section>
+
+<!-- PHYSICS -->
+<section data-id="physics">
+  <div class="chip">Idea 4 / 9 · Physics</div>
+  <h1>Physics is <b>a few numbers</b>, updated every frame</h1>
+  <div class="row" style="margin-top:40px;align-items:flex-start">
+    <div class="code" style="flex:1.3">
+      <div><i>1394</i>car.vy -= GRAV * dt;     <span class="c">// gravity = 30</span></div>
+      <div><i>1395</i>car.y  += car.vy * dt;   <span class="c">// height</span></div>
+      <div style="height:12px"></div>
+      <div><i>    </i><span class="c">// Space, on the ground:</span></div>
+      <div><i>1378</i>car.vy = HOP_V;           <span class="c">// kick = 11.5</span></div>
+      <div><i>    </i>car.air -= HOP_COST;      <span class="c">// 16% gas</span></div>
+      <div><i>    </i><span class="c">// Space held, in the air:</span></div>
+      <div><i>1392</i>car.air -= HOVER_DRAIN * dt;</div>
+    </div>
+    <div class="col">
+      <p class="big">y · vy</p><p class="mu" style="margin:6px 0 30px">height · up-speed</p>
+      <p class="big acc">air</p><p class="mu" style="margin-top:6px">one tank of cold gas for hop, hover and boost.<br>Refills only on the ground.</p>
+    </div>
+  </div>
+</section>
+
+<!-- AABB -->
+<section data-id="aabb">
+  <div class="chip">Idea 5 / 9 · Collisions</div>
+  <div class="row" style="align-items:flex-start">
+    <div style="flex:1">
+      <h1 style="font-size:44px">Two boxes. <b>Do they overlap?</b></h1>
+      <svg width="520" height="300" viewBox="0 0 520 300" style="margin-top:20px">
+        <text x="12" y="22" fill="#8b93a1" font-size="16">TOP-DOWN</text>
+        <rect x="150" y="40" width="120" height="230" rx="6" fill="rgba(255,210,63,.10)" stroke="#ffd23f" stroke-width="3"/>
+        <text x="210" y="160" text-anchor="middle" fill="#ffd23f" font-size="22" font-weight="600">BUS</text>
+        <rect x="236" y="200" width="70" height="92" rx="6" fill="rgba(90,209,255,.12)" stroke="#5ad1ff" stroke-width="3"/>
+        <text x="271" y="252" text-anchor="middle" fill="#5ad1ff" font-size="18" font-weight="600">CAR</text>
+        <rect x="236" y="200" width="34" height="70" fill="rgba(255,77,94,.45)"/>
+        <text x="350" y="236" fill="#ff4d5e" font-size="19" font-weight="600">overlap in x</text>
+        <text x="350" y="262" fill="#ff4d5e" font-size="19" font-weight="600">and in z → hit?</text>
+      </svg>
+    </div>
+    <div style="flex:1.05">
+      <div class="code" style="font-size:18px;margin-top:6px">
+        <div><i>1531</i>ox = (CAR_HW + o.w/2) - |dx|</div>
+        <div><i>    </i>oz = (CAR_HL + o.d/2) - |dz|</div>
+        <div><i>1533</i><span class="k">if</span> (ox &lt;= <span class="n">0</span> || oz &lt;= <span class="n">0</span>) <span class="k">continue</span>;</div>
+      </div>
+      <p class="mu" style="margin-top:12px;font-size:20px">Same idea as two <code>getBoundingClientRect()</code> rects intersecting.</p>
+      <div data-step="1" class="card" style="margin-top:16px;padding:18px 22px">
+        <p style="font-size:21px"><b>Overlap?</b> then check height:</p>
+        <p style="font-size:21px;margin-top:6px"><span class="grn">car.y ≥ roof</span> → cleared, +swag</p>
+        <p style="font-size:21px"><span class="red">car.y &lt; roof</span> → crash</p>
+      </div>
+      <div data-step="2" class="card" style="margin-top:14px;padding:18px 22px;border-color:#5a4520">
+        <p style="font-size:21px"><span class="acc">impact ≤ 12</span> → just tailgating</p>
+        <p style="font-size:21px"><span class="acc">hitCd = 0.6 s</span>, refreshed on contact</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CHANNELS -->
+<section data-id="channels">
+  <div class="chip">Idea 6 / 9 · Game feel</div>
+  <h1>One event, <b>many reactions</b>. One message, <b>one channel</b>.</h1>
+  <div class="row" style="margin-top:40px">
+    <div class="card col"><p class="mu" style="font-size:18px">flash()</p><p style="font-size:30px;font-weight:800;color:#ffb84d;margin:10px 0">ROOF HOP!</p><p style="font-size:20px">On-road events: crashes, stunts</p></div>
+    <div class="card col"><p class="mu" style="font-size:18px">toast()</p><div style="background:#f2f4f7;color:#111;border-radius:14px;padding:12px 14px;margin:10px 0;font-size:17px"><b>e-Challan</b> · ₹2,000<br>Flying without a licence</div><p style="font-size:20px">Your phone: e-challans, WhatsApps</p></div>
+    <div class="card col"><p class="mu" style="font-size:18px">hint()</p><div style="display:inline-block;background:rgba(255,255,255,.12);border-radius:999px;padding:9px 16px;margin:12px 0;font-size:17px">Hop over them — SPACE</div><p style="font-size:20px">Tips, at the bottom</p></div>
+  </div>
+  <p class="mu" style="margin-top:30px">Never two channels for the same event, or the screen turns into noise.</p>
+</section>
+
+<!-- AUDIO -->
+<section data-id="audio">
+  <div class="chip">Idea 7 / 9 · Web Audio</div>
+  <h1>Sound is <b>plumbing</b></h1>
+  <svg width="1136" height="420" viewBox="0 0 1136 420" style="margin-top:20px">
+    <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8b93a1"/></marker>
+      <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ff4d5e"/></marker></defs>
+    <g font-size="21" font-weight="600" text-anchor="middle">
+      <rect x="0" y="40" width="190" height="64" rx="14" fill="#151922" stroke="#262c38"/><text x="95" y="80" fill="#f2f4f7">Horn recording</text>
+      <rect x="0" y="130" width="190" height="64" rx="14" fill="#151922" stroke="#262c38"/><text x="95" y="170" fill="#f2f4f7">Synth: moo, thrust</text>
+      <rect x="250" y="85" width="150" height="64" rx="14" fill="#151922" stroke="#262c38"/><text x="325" y="125" fill="#f2f4f7">Panner</text>
+      <rect x="460" y="85" width="180" height="64" rx="14" fill="#2a2110" stroke="#f5a623" stroke-width="2"/><text x="550" y="125" fill="#f5a623">SFX bus</text>
+      <rect x="700" y="85" width="180" height="64" rx="14" fill="#151922" stroke="#262c38"/><text x="790" y="125" fill="#f2f4f7">Compressor</text>
+      <rect x="940" y="85" width="190" height="64" rx="14" fill="#151922" stroke="#262c38"/><text x="1035" y="125" fill="#f2f4f7">Master · 🔇</text>
+      <rect x="460" y="250" width="180" height="64" rx="14" fill="#151922" stroke="#262c38"/><text x="550" y="290" fill="#f2f4f7">Reverb</text>
+    </g>
+    <g stroke="#8b93a1" stroke-width="2.5" fill="none">
+      <path d="M190 72 L248 110" marker-end="url(#a2)"/><path d="M190 162 L248 128" marker-end="url(#a2)"/>
+      <path d="M400 117 L458 117" marker-end="url(#a2)"/><path d="M640 117 L698 117" marker-end="url(#a2)"/><path d="M880 117 L938 117" marker-end="url(#a2)"/>
+      <path d="M520 149 L520 248" marker-end="url(#a2)"/>
+      <path data-step="0" d="M580 250 L580 151" marker-end="url(#a2)"/>
+    </g>
+    <text data-step="0" x="560" y="210" fill="#8b93a1" font-size="17">send · return</text>
+    <g data-step="1">
+      <path d="M640 290 C 700 290, 720 200, 760 151" stroke="#ff4d5e" stroke-width="3" stroke-dasharray="8 7" fill="none" marker-end="url(#a3)"/>
+      <text x="760" y="262" fill="#ff4d5e" font-size="21" font-weight="600">bug: reverb skipped the SFX bus</text>
+      <text x="760" y="290" fill="#8b93a1" font-size="19">→ faint echo even with sound off</text>
+      <text x="0" y="380" fill="#7CFC9A" font-size="23" font-weight="600">Rule: every voice flows through the SFX bus, so pause and mute really silence it.</text>
+    </g>
+  </svg>
+</section>
+
+<!-- STATES -->
+<section data-id="states">
+  <div class="chip">Idea 8 / 9 · State machine</div>
+  <h1>Always in <b>exactly one</b> state</h1>
+  <svg width="1136" height="460" viewBox="0 0 1136 460" style="margin-top:14px">
+    <defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8b93a1"/></marker></defs>
+    <g font-size="25" font-weight="600" text-anchor="middle">
+      <rect x="0" y="120" width="190" height="76" rx="38" fill="#151922" stroke="#3a4150" stroke-width="2"/><text x="95" y="167" fill="#f2f4f7">title</text>
+      <rect x="300" y="120" width="200" height="76" rx="38" fill="#2a2110" stroke="#f5a623" stroke-width="2"/><text x="400" y="167" fill="#f5a623">playing</text>
+      <rect x="620" y="120" width="190" height="76" rx="38" fill="#151922" stroke="#3a4150" stroke-width="2"/><text x="715" y="167" fill="#f2f4f7">paused</text>
+      <rect x="300" y="330" width="200" height="76" rx="38" fill="#151922" stroke="#3a4150" stroke-width="2"/><text x="400" y="377" fill="#f2f4f7">over</text>
+      <rect x="880" y="0" width="230" height="76" rx="16" fill="#151922" stroke="#5ad1ff" stroke-width="2" stroke-dasharray="7 6"/><text x="995" y="47" fill="#5ad1ff">showroom</text>
+    </g>
+    <g stroke="#8b93a1" stroke-width="2.5" fill="none">
+      <path d="M190 158 L298 158" marker-end="url(#a4)"/>
+      <path d="M500 145 L618 145" marker-end="url(#a4)"/><path d="M620 172 L502 172" marker-end="url(#a4)"/>
+      <path d="M400 196 L400 328" marker-end="url(#a4)"/>
+      <path d="M300 368 C 120 368, 95 280, 95 198" marker-end="url(#a4)"/>
+      <path d="M95 120 C 95 40, 500 38, 878 38" stroke="#5ad1ff" stroke-dasharray="6 6" marker-end="url(#a4)"/>
+    </g>
+    <text x="244" y="148" fill="#8b93a1" font-size="17" text-anchor="middle">Enter</text>
+    <text x="559" y="135" fill="#8b93a1" font-size="17" text-anchor="middle">P</text>
+    <text x="414" y="270" fill="#8b93a1" font-size="17">arrive / give up</text>
+    <text x="1000" y="105" fill="#8b93a1" font-size="17" text-anchor="middle">a modal on top</text>
+    <g data-step="1">
+      <path d="M760 120 C 790 70, 830 50, 878 50" stroke="#ff4d5e" stroke-width="3.5" fill="none" marker-end="url(#a4)"/>
+      <text x="640" y="262" fill="#ff4d5e" font-size="22" font-weight="600">bug: paused → showroom = silent horn</text>
+      <text x="640" y="292" fill="#8b93a1" font-size="19">pause had muted the SFX bus</text>
+      <text x="640" y="336" fill="#7CFC9A" font-size="21" font-weight="600">fix: on enter, set the showroom's own audio state;</text>
+      <text x="640" y="364" fill="#7CFC9A" font-size="21" font-weight="600">on exit, restore the previous one</text>
+    </g>
+  </svg>
+</section>
+
+<!-- DEBUG -->
+<section data-id="debug">
+  <div class="chip">Idea 9 / 9 · Debuggability</div>
+  <h1>Put a <b>handle on window</b></h1>
+  <div class="code" style="margin-top:30px;font-size:20px;background:#1b1d22;border-color:#30343c">
+    <div><span class="blu">&gt;</span> __game.car</div>
+    <div class="mu">  {s: 535.6, x: -3, y: 0, vy: 0, speed: 34, air: 100, onGround: true}</div>
+    <div style="height:10px"></div>
+    <div data-step="1"><span class="blu">&gt;</span> <span class="k">let</span> t0 = performance.<span class="f">now</span>(); __game.<span class="f">sim</span>(<span class="n">900</span>, bot); performance.<span class="f">now</span>() - t0</div>
+    <div data-step="1" class="mu">  {s: 3300.1, clock: <span class="grn">"9:30"</span>, state: "over", crashes: 10, swag: 1580}</div>
+    <div data-step="1" class="acc">  236 ms</div>
+  </div>
+  <p data-step="0" class="mu" style="margin-top:22px">Like exposing your Redux store for DevTools.</p>
+  <p data-step="1" style="margin-top:6px">sim() = fixed 1/60 s steps, no drawing. A bot drives all 3.3 km in a quarter-second.</p>
+</section>
+
+<!-- RECAP -->
+<section data-id="recap">
+  <div class="chip">Recap</div>
+  <h1>Nine ideas</h1>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:34px">
+    <div class="card"><span class="acc">1</span> A loop that <b>never waits</b></div>
+    <div class="card"><span class="acc">2</span> A tree of <b>simple shapes</b></div>
+    <div class="card"><span class="acc">3</span> Treadmill + <b>virtual list</b></div>
+    <div class="card"><span class="acc">4</span> Physics = <b>a few numbers</b></div>
+    <div class="card"><span class="acc">5</span> <b>Overlapping boxes</b></div>
+    <div class="card"><span class="acc">6</span> <b>Juice</b>, one channel each</div>
+    <div class="card"><span class="acc">7</span> Sound is <b>plumbing</b></div>
+    <div class="card"><span class="acc">8</span> One <b>state</b> at a time</div>
+    <div class="card"><span class="acc">9</span> A <b>debug hook</b></div>
+  </div>
+</section>
+
+<!-- END -->
+<section data-id="end">
+  <div style="position:absolute;inset:0;background:url(../../_screenshots/gameplay.jpg) center/cover;opacity:.25"></div>
+  <div style="position:relative;margin-top:120px">
+    <div class="chip">Your homework</div>
+    <h1 style="font-size:58px">Open <b>game.js</b>, find <code class="acc" style="font-size:52px">frame(now)</code>.<br>Follow one frame.</h1>
+    <p style="margin-top:44px;font-size:28px">▶ thevarun.github.io/roadster-bengaluru</p>
+    <p class="mu" style="margin-top:8px;font-size:22px">github.com/thevarun/roadster-bengaluru</p>
+  </div>
+</section>
+
+<div class="foot" id="foot">ROADSTER: NAMMA BENGALURU · HOW IT WORKS</div>
+<script>
+  const q = new URLSearchParams(location.search), id = q.get('s') || 'title', step = +(q.get('step') || 0);
+  const sec = document.querySelector(`section[data-id="${id}"]`); sec.classList.add('on');
+  if (id === 'title' || id === 'end') document.getElementById('foot').style.display = 'none';
+  sec.querySelectorAll('[data-step]').forEach(el => { const n = +el.dataset.step; if (n > step) el.classList.add('hide'); });
+  const hls = sec.querySelectorAll('[data-hl]');
+  hls.forEach(el => { const on = el.dataset.hl.split(',').map(Number).includes(step); el.classList.toggle('hl', on); });
+</script>
+</body></html>

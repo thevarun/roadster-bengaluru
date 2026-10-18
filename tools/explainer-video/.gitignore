@@ -1,0 +1,9 @@
+clips/
+vo/
+seg-*/
+slides/
+profile-*/
+prof-slides/
+logs-*.txt
+vo-*.json
+*.mp4

@@ -14,6 +14,7 @@ A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layou
 - `audio/`: five trimmed CC0 horn MP3s, credited in the README.
 - `_screenshots/`: the four current images the README uses. Don't commit dev-iteration screenshots here.
 - `media/`: finished videos (the 15 s launch clip, the explainer video). Keep each well under GitHub's 100 MB limit.
+- `tools/explainer-video/`: scripts that build the explainer video (narration, slides, overlay footage). See its README.
 
 ## Conventions
 - World: forward is **-Z**. `car.s` is distance travelled; the car's world z is `-car.s`. Obstacles store `x`, `z`, `w`, `d`, `h`, `vz` (forward speed). Collision is an AABB in x/z plus a height check (`car.y >= o.h` means you're above it).

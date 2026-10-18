@@ -1995,6 +1995,7 @@ requestAnimationFrame(frame);
 // debug hook for automated playtesting
 window.__game = {
   car, game, obstacles: () => obstacles, keys, pressed, startGame, setPaused, AU, showroom, get state() { return state; },
+  THREE, scene, camera, renderer, // for teaching overlays / captures, never used by the game itself
   poojaStep(sec) { for (let t = 0; t < sec && pooja; t += 1 / 60) updatePooja(1 / 60); return pooja ? pooja.step : 'done'; },
   // fast-forward the sim: ctl(t) may set keys/pressed each tick
   sim(sec, ctl) { const dt = 1 / 60; for (let t = 0; t < sec && state === 'playing'; t += dt) { ctl && ctl(t); update(dt); syncVisuals(dt); updateParticles(dt); for (const k in pressed) pressed[k] = false; } updateHUD(1); renderer.render(scene, camera); return { s: +car.s.toFixed(1), x: +car.x.toFixed(2), y: +car.y.toFixed(2), speed: +car.speed.toFixed(1), air: +car.air.toFixed(0), clock: fmtClock(game.clock), state, crashes: game.crashes, swag: Math.round(game.swag) }; },
