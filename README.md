@@ -8,6 +8,8 @@ A small browser game: Tesla minimalism versus Bengaluru chaos. Hop over autos, h
 
 15-second gameplay clip: [media/roadster-bengaluru-clip.mp4](media/roadster-bengaluru-clip.mp4)
 
+How it works, for web developers new to game dev (6.5 min, narrated): [media/explainer.mp4](media/explainer.mp4)
+
 ![Hovering over Silk Board, collecting an e-challan for flying without a licence](_screenshots/gameplay.jpg)
 
 ## Controls

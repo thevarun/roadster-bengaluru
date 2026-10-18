@@ -9,12 +9,12 @@
     { "id": "loop", "beats": [
       { "v": "slide:loop/0", "t": "Idea one. A web app waits. Nothing happens until somebody clicks. A game never waits." },
       { "v": "slide:loop/1", "t": "Sixty times a second, the browser calls one function. It reads the keyboard, updates the world, and draws a picture. That's it. That's the whole trick." },
-      { "v": "slide:loopcode/0", "t": "Here it is in game dot j s. The function is called frame, and the first thing it does is ask the browser to call it again next time." },
-      { "v": "slide:loopcode/1", "t": "Now look at d t. Delta time: the seconds since the last frame. Everything moves by speed times d t, so the game runs the same on a sixty hertz laptop and a hundred and twenty hertz phone." },
-      { "v": "slide:loopcode/2", "t": "And that Math dot min, with zero point zero five? Switch tabs for ten seconds, and the next d t would be ten. Your car would teleport straight through a bus. So we clamp it. One line, one bug prevented." }
+      { "v": "slide:loopcode/0", "t": "Here it is in game dot JS. The function is called frame, and the first thing it does is ask the browser to call it again next time." },
+      { "v": "slide:loopcode/1", "t": "Now look at D T. Delta time: the seconds since the last frame. Everything moves by speed times d t, so the game runs the same on a sixty hertz laptop and a hundred and twenty hertz phone." },
+      { "v": "slide:loopcode/2", "t": "And that Math dot min, with zero point zero five? Switch tabs for ten seconds, and the next D T would be ten. Your car would teleport straight through a bus. So we clamp it. One line, one bug prevented." }
     ]},
     { "id": "scene", "beats": [
-      { "v": "slide:graph/0", "t": "Idea two. What does draw a picture actually mean? We use a library called three dot j s. Think of it as a DOM, but for 3D." },
+      { "v": "slide:graph/0", "t": "Idea two. What does draw a picture actually mean? We use a library called three dot JS. Think of it as a DOM, but for 3D." },
       { "v": "slide:graph/1", "t": "A scene is a tree of objects. Each object is a mesh: a shape, called geometry, plus a look, called material. A camera decides what you see, and the renderer turns all of it into pixels." },
       { "v": "clip:wire", "t": "There are no 3D model files in this game. Let's switch on wireframe." },
       { "v": "clip:wire", "t": "Everything is boxes, cylinders and spheres, stretched and stacked in code. Even the cow. Nothing to download, and very cheap to draw." }
@@ -50,12 +50,12 @@
       { "v": "slide:states/1", "t": "Bugs love the edges between states. Open the showroom from the pause menu, and the horn test was silent, because pausing had muted the effects bus. The fix: the showroom sets its own sound state on the way in, and restores the old one on the way out." }
     ]},
     { "id": "debug", "beats": [
-      { "v": "slide:debug/0", "t": "Last idea. Make your game easy to poke at. game dot j s puts a debug object on window, the way you might expose a Redux store." },
+      { "v": "slide:debug/0", "t": "Last idea. Make your game easy to poke at. game dot JS puts a debug object on window, the way you might expose a Redux store." },
       { "v": "slide:debug/1", "t": "Its sim function fast-forwards the game in fixed sixtieth-of-a-second steps, with nothing drawn. A tiny bot drives the entire three point three kilometres in about a quarter of a second. That's how we tuned the clock, so arriving at nine thirty is tight, but fair." }
     ]},
     { "id": "outro", "beats": [
       { "v": "slide:recap/0", "t": "So. A loop that never waits. A tree of simple shapes. A treadmill and a virtual list. A few numbers of physics. Overlapping boxes. Juice. Plumbing. States. And a debug hook." },
-      { "v": "slide:end/0", "t": "Open game dot j s, find the frame function, and follow one frame all the way through. Then go beat the nine thirty standup." }
+      { "v": "slide:end/0", "t": "Open game dot JS, find the frame function, and follow one frame all the way through. Then go beat the nine thirty standup." }
     ]}
   ]
 }
