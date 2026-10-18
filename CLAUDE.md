@@ -13,6 +13,7 @@ A comedy browser game: fly a Tesla Roadster through Bengaluru traffic (HSR Layou
 - `game.js`: everything else, in commented sections: scene, sky, vehicle versions and the Roadster builder, traffic builders (`BUILDERS`), scenery, particles, audio (`AU`: CC0 horn samples plus WebAudio synth), UI helpers, input, game state, spawning, FSD, `update()`, render sync, showroom and pooja, flow and main loop.
 - `audio/`: five trimmed CC0 horn MP3s, credited in the README.
 - `_screenshots/`: the four current images the README uses. Don't commit dev-iteration screenshots here.
+- `media/`: finished videos (the 15 s launch clip, the explainer video). Keep each well under GitHub's 100 MB limit.
 
 ## Conventions
 - World: forward is **-Z**. `car.s` is distance travelled; the car's world z is `-car.s`. Obstacles store `x`, `z`, `w`, `d`, `h`, `vz` (forward speed). Collision is an AABB in x/z plus a height check (`car.y >= o.h` means you're above it).

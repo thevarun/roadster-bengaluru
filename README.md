@@ -6,6 +6,8 @@ A small browser game: Tesla minimalism versus Bengaluru chaos. Hop over autos, h
 
 **▶ Play: https://thevarun.github.io/roadster-bengaluru/**
 
+15-second gameplay clip: [media/roadster-bengaluru-clip.mp4](media/roadster-bengaluru-clip.mp4)
+
 ![Hovering over Silk Board, collecting an e-challan for flying without a licence](_screenshots/gameplay.jpg)
 
 ## Controls
